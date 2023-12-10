@@ -54,7 +54,7 @@ add_executable(${PROJECT_NAME}
     src/primitives/cone.h src/primitives/cone.cpp
 
 
-
+    src/utils/model.h
 
 )
 

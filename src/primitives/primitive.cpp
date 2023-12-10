@@ -1,4 +1,4 @@
-#include "Primitive.h"
+#include "primitive.h"
 
 Primitive::Primitive(const glm::mat4 &pctm, const ScenePrimitive &pprimitive) {
     // Initialize model matrix (from param)

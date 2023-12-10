@@ -931,3 +931,64 @@ void Realtime::saveViewportImage(std::string filePath) {
     glDeleteRenderbuffers(1, &rbo);
     glDeleteFramebuffers(1, &fbo);
 }
+
+
+//#include <glm/gtc/noise.hpp>
+
+//const unsigned int number = 5000;
+//// Radius of circle around which asteroids orbit
+//float radius = 100.0f;
+//// How much asteroids deviate from the radius
+//float radiusDeviation = 25.0f;
+
+//// Holds all transformations for the asteroids
+//std::vector<glm::mat4> instanceMatrix;
+
+//for (unsigned int i = 0; i < number; i++)
+//{
+//    float x = randf();
+//    float y = ((rand() % 2) * 2 - 1) * sqrt(1.0f - x * x);
+
+//    float perlinX = glm::simplex(glm::vec2(x * 0.1f, y * 0.1f));
+//    float perlinY = glm::simplex(glm::vec2(x * 0.1f, y * 0.1f));
+
+//    float finalRadius = radius + radiusDeviation * perlinX;
+//    x += radiusDeviation * perlinX;
+//    y += radiusDeviation * perlinY;
+
+//    // Holds transformations before multiplying them
+//    glm::vec3 tempTranslation;
+//    glm::quat tempRotation;
+//    glm::vec3 tempScale;
+
+//    // Makes the random distribution more even
+//    if (randf() > 0.5f)
+//    {
+//        tempTranslation = glm::vec3(y * finalRadius, randf(), x * finalRadius);
+//    }
+//    else
+//    {
+//        tempTranslation = glm::vec3(x * finalRadius, randf(), y * finalRadius);
+//    }
+//    // Generates random rotations
+//    tempRotation = glm::quat(1.0f, randf(), randf(), randf());
+//    // Generates random scales
+//    tempScale = 0.1f * glm::vec3(randf(), randf(), randf());
+
+//    // Initialize matrices
+//    glm::mat4 trans = glm::mat4(1.0f);
+//    glm::mat4 rot = glm::mat4(1.0f);
+//    glm::mat4 sca = glm::mat4(1.0f);
+
+//    // Transform the matrices to their correct form
+//    trans = glm::translate(trans, tempTranslation);
+//    rot = glm::mat4_cast(tempRotation);
+//    sca = glm::scale(sca, tempScale);
+
+//    // Push matrix transformation
+//    instanceMatrix.push_back(trans * rot * sca);
+//}
+
+// Create the asteroid model with instancing enabled
+//Model asteroid((parentDir + asteroidPath).c_str(), number, instanceMatrix);
+
