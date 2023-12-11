@@ -4,8 +4,12 @@
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include <iostream>
+#include "glm/gtc/quaternion.hpp"
 #include "settings.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <random>
+#include "noise/fastnoise.h"
+#include <glm/gtx/string_cast.hpp>
 
 // ================== Project 5: Lights, Camera
 
@@ -138,6 +142,8 @@ void Realtime::initializeGL() {
     // Now that we've initialized GL, we can actually process settings changes
     gl_initialized = true;
     updateMeshes();
+
+    generateAsteroidTransformations();
 
     // Create data that encodes the two triangles that make up a framebuffer
     // Allows for mapping over our rendered image as if it is a texture
@@ -932,63 +938,65 @@ void Realtime::saveViewportImage(std::string filePath) {
     glDeleteFramebuffers(1, &fbo);
 }
 
+void printMatrix(const glm::mat4& matrix) {
+    std::cout << glm::to_string(matrix) << std::endl;
+}
 
-//#include <glm/gtc/noise.hpp>
+std::vector<glm::mat4> Realtime::generateAsteroidTransformations(const unsigned int number) {
+    const float radius = 100.0f;
+    const float radiusDeviation = 25.0f;
+    std::vector<glm::mat4> instanceMatrix;
 
-//const unsigned int number = 5000;
-//// Radius of circle around which asteroids orbit
-//float radius = 100.0f;
-//// How much asteroids deviate from the radius
-//float radiusDeviation = 25.0f;
+    auto randf = []() {
+        return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    };
 
-//// Holds all transformations for the asteroids
-//std::vector<glm::mat4> instanceMatrix;
+    for (unsigned int i = 0; i < number; i++) {
+        // Generate a random seed
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<int> distribution(1, 10000);
+        int randomSeed = distribution(gen);
 
-//for (unsigned int i = 0; i < number; i++)
-//{
-//    float x = randf();
-//    float y = ((rand() % 2) * 2 - 1) * sqrt(1.0f - x * x);
+        // Initialize FastNoise with the random seed
+        FastNoise perlinNoise;
+        perlinNoise.SetSeed(randomSeed);
 
-//    float perlinX = glm::simplex(glm::vec2(x * 0.1f, y * 0.1f));
-//    float perlinY = glm::simplex(glm::vec2(x * 0.1f, y * 0.1f));
+        // Generate x and y using Perlin noise
+        float x = randf();
+        float y = ((rand() % 2) * 2 - 1) * sqrt(1.0f - x * x);
+        float finalRadius = radius + randf() * radiusDeviation;
 
-//    float finalRadius = radius + radiusDeviation * perlinX;
-//    x += radiusDeviation * perlinX;
-//    y += radiusDeviation * perlinY;
+        // Sample Perlin noise as a height map
+        float heightValue = perlinNoise.GetNoise(x * finalRadius, y * finalRadius, 0.0f);
 
-//    // Holds transformations before multiplying them
-//    glm::vec3 tempTranslation;
-//    glm::quat tempRotation;
-//    glm::vec3 tempScale;
+        // Use height value to displace asteroids vertically
+        float verticalOffset = heightValue * finalRadius / 2; // recheck this
 
-//    // Makes the random distribution more even
-//    if (randf() > 0.5f)
-//    {
-//        tempTranslation = glm::vec3(y * finalRadius, randf(), x * finalRadius);
+        // Choose translation axis based on a random distribution
+        glm::vec3 translationAxis = (randf() > 0.5f) ?
+                                        glm::vec3(y, 0.0f, x) :
+                                        glm::vec3(x, 0.0f, y);
+
+        // Holds transformations before multiplying them
+        glm::vec3 tempTranslation = translationAxis * finalRadius;
+        glm::quat tempRotation = glm::quat(1.0f, randf(), randf(), randf());
+        glm::vec3 tempScale = 0.1f * glm::vec3(randf(), randf(), randf());
+
+        // Initialize matrices
+        glm::mat4 trans = glm::translate(glm::mat4(1.0f),
+                                         tempTranslation + glm::vec3(0.0f, verticalOffset, 0.0f));
+        glm::mat4 rot = glm::mat4_cast(tempRotation);
+        glm::mat4 sca = glm::scale(glm::mat4(1.0f), tempScale);
+
+        // Push matrix transformation
+        instanceMatrix.push_back(trans * rot * sca);
+    }
+
+//    // Print out the matrices
+//    for (const auto& matrix : instanceMatrix) {
+//        std::cout << glm::to_string(matrix) << std::endl;
 //    }
-//    else
-//    {
-//        tempTranslation = glm::vec3(x * finalRadius, randf(), y * finalRadius);
-//    }
-//    // Generates random rotations
-//    tempRotation = glm::quat(1.0f, randf(), randf(), randf());
-//    // Generates random scales
-//    tempScale = 0.1f * glm::vec3(randf(), randf(), randf());
 
-//    // Initialize matrices
-//    glm::mat4 trans = glm::mat4(1.0f);
-//    glm::mat4 rot = glm::mat4(1.0f);
-//    glm::mat4 sca = glm::mat4(1.0f);
-
-//    // Transform the matrices to their correct form
-//    trans = glm::translate(trans, tempTranslation);
-//    rot = glm::mat4_cast(tempRotation);
-//    sca = glm::scale(sca, tempScale);
-
-//    // Push matrix transformation
-//    instanceMatrix.push_back(trans * rot * sca);
-//}
-
-// Create the asteroid model with instancing enabled
-//Model asteroid((parentDir + asteroidPath).c_str(), number, instanceMatrix);
-
+    return instanceMatrix;
+}

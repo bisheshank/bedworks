@@ -151,4 +151,7 @@ private:
 
     // Default FBO counter (the one that actually displays stuff lol)
     GLuint default_fbo = 2;
+
+    // For asteroid generation
+    std::vector<glm::mat4> generateAsteroidTransformations(const unsigned int number = 2000);
 };

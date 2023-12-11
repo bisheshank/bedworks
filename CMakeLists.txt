@@ -55,7 +55,7 @@ add_executable(${PROJECT_NAME}
 
 
     src/utils/model.h
-
+    src/noise/fastnoise.h src/noise/fastnoise.cpp
 )
 
 # GLM: this creates its library and allows you to `#include "glm/..."`
