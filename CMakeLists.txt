@@ -22,6 +22,7 @@ find_package(Qt6 REQUIRED COMPONENTS Xml)
 
 # Allows you to include files from within those directories, without prefixing their filepaths
 include_directories(src)
+include_directories(libraries)
 
 # Specifies .cpp and .h files to be passed to the compiler
 add_executable(${PROJECT_NAME}
@@ -56,14 +57,21 @@ add_executable(${PROJECT_NAME}
 
     src/utils/model.h
     src/noise/fastnoise.h src/noise/fastnoise.cpp
+    src/meshes/texture.h src/meshes/texture.cpp
+    src/meshes/model.h src/meshes/model.cpp
+    src/meshes/mesh.h src/meshes/mesh.cpp
+
+    libraries/include/glad/glad.h
+    libraries/include/json/json.h
+    libraries/include/stb/stb_image.h
 )
 
 # GLM: this creates its library and allows you to `#include "glm/..."`
 add_subdirectory(glm)
 
 # GLEW: this creates its library and allows you to `#include "GL/glew.h"`
-add_library(StaticGLEW STATIC glew/src/glew.c
-)
+add_library(StaticGLEW STATIC
+    glew/src/glew.c)
 include_directories(${PROJECT_NAME} PRIVATE glew/include)
 
 # Specifies libraries to be linked (Qt components, glew, etc)
