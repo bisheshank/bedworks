@@ -175,4 +175,7 @@ private:
 
     // THE SPACESHIP
     Model spaceship;
+
+    // Spaceship data for controlling flight
+    float speed = 0.1f;
 };

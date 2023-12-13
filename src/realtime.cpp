@@ -80,6 +80,8 @@ Realtime::Realtime(QWidget *parent)
 
     // SKYBOX!
     box = Skybox();
+
+    speed = 0.1f;
 }
 
 void Realtime::finish() {
@@ -357,6 +359,11 @@ void Realtime::paintGL() {
 
     // Helper to apply post processing
     paint_post_process(m_fbo_texture);
+
+    // Advance the camera by movement (Speed)
+    glm::vec4 delta_pos = speed * m_camera.get_camera_look();
+    m_camera.update_translation_matrix(m_camera.get_camera_pos() + delta_pos);
+    m_camera.update_view_matrix();
 }
 
 // Function to make the skybox (similar to making the model)
@@ -1044,50 +1051,95 @@ void Realtime::timerEvent(QTimerEvent *event) {
     float deltaTime = elapsedms * 0.001f;
     m_elapsedTimer.restart();
 
-    // Use deltaTime and m_keyMap here to move around (well, yes)
+    // Booleans to indicate if we need to update matrices
+    bool update_rotation = false;
 
-    // Strategy: accumulate all positional changes from each key
-    glm::vec4 delta_pos(0.0f);
+    // Accumulate change in speed
+    float delta_speed = 0.0f;
 
-    // If W pressed, move along look
+    // Similar idea to speed: accumulate all rotations, then apply to view matrices
+    glm::vec4 rotation(0.0f, 0.0f, 0.0f, 1.0f);
+
+
+    // If up arrow pressed, speed up
+    if (m_keyMap[Qt::Key_Up]) {
+        delta_speed = 0.15f * deltaTime;
+    }
+
+    // If down arrow pressed, speed down
+    if (m_keyMap[Qt::Key_Down]) {
+        delta_speed = -0.3f * deltaTime;
+    }
+
+    // If left arrow pressed, yaw left
+    if (m_keyMap[Qt::Key_Left]) {
+        float radians = 35.f * deltaTime * radian_conversion;
+        // Rotate around the up vector
+        glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(m_camera.get_camera_up()), radians);
+        rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
+        update_rotation = true;
+    }
+
+    // If right arrow pressed, yaw right
+    if (m_keyMap[Qt::Key_Right]) {
+        float radians = 35.f * -deltaTime * radian_conversion;
+        // Rotate around the up vector
+        glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(m_camera.get_camera_up()), radians);
+        rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
+        update_rotation = true;
+    }
+
+    // If W pressed, pitch up
     if (m_keyMap[Qt::Key_W]) {
-        delta_pos += m_camera.get_camera_look();
+        float radians = 200.f * -deltaTime * radian_conversion;
+        // Rotate around the up vector
+        glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(m_camera.get_left()), radians);
+        rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
+        update_rotation = true;
     }
 
-    // If S pressed, move opposite look
+    // If S pressed, pitch down
     if (m_keyMap[Qt::Key_S]) {
-        delta_pos -= m_camera.get_camera_look();
+        float radians = 100.f * deltaTime * radian_conversion;
+        // Rotate around the up vector
+        glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(m_camera.get_left()), radians);
+        rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
+        update_rotation = true;
     }
 
-    // If A pressed, move left
+    // If A pressed, roll left
     if (m_keyMap[Qt::Key_A]) {
-        delta_pos += m_camera.get_left();
+        float radians = 250.f * -deltaTime * radian_conversion;
+        // Rotate around the up vector
+        glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(m_camera.get_camera_look()), radians);
+        rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
+        update_rotation = true;
     }
 
-    // If D pressed, move right
+    // If D pressed, roll right
     if (m_keyMap[Qt::Key_D]) {
-        delta_pos += m_camera.get_right();
+        float radians = 250.f * deltaTime * radian_conversion;
+        // Rotate around the up vector
+        glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(m_camera.get_camera_look()), radians);
+        rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
+        update_rotation = true;
     }
 
-    // If SPACE pressed, move in world space
-    if (m_keyMap[Qt::Key_Space]) {
-        delta_pos += glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-    }
+    if (update_rotation) {
+        // Compute newly rotated look and up vectors that define camera rotation matrix
+        glm::vec4 new_look = glm::vec4(quaternion_rotate(glm::vec3(m_camera.get_camera_look()), rotation), 0.0f);
+        glm::vec4 new_up = glm::vec4(quaternion_rotate(glm::vec3(m_camera.get_camera_up()), rotation), 0.0f);
 
-    // If CTRL pressed, move in world space
-    if (m_keyMap[Qt::Key_Control]) {
-        delta_pos += glm::vec4(0.0f, -1.0f, 0.0f, 0.0f);
-    }
-
-    // Check if any keys were actually pressed (any change happened)
-    if (glm::length(delta_pos) > 0.1) {
-        // Scale the amount of movement accordingly
-        delta_pos = deltaTime * 15.0f * glm::normalize(delta_pos);
-
-        // Update the position and generate a new view matrix
-        m_camera.update_translation_matrix(m_camera.get_camera_pos() + delta_pos);
+        // Apply these changes to the view matrix
+        m_camera.update_rotation_matrix(new_look, new_up);
         m_camera.update_view_matrix();
     }
+
+    // Update speed
+    speed += delta_speed;
+    // Clamping for min and max speeds
+    speed = std::min(speed, 1.0f);
+    speed = std::max(speed, 0.05f);
 
     update(); // asks for a PaintGL() call to occur
 }
