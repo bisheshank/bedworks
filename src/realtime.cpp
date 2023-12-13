@@ -53,7 +53,7 @@ Realtime::Realtime(QWidget *parent)
 
     // Initialize far and near planes
     near_plane = 0.1f;
-    far_plane = 10.f;
+    far_plane = 10000.f;
 
     // Set gl_initialized to false because we haven't set up yet
     gl_initialized = false;
@@ -81,7 +81,20 @@ Realtime::Realtime(QWidget *parent)
     // SKYBOX!
     box = Skybox();
 
+    // Plane movement params
     speed = 0.1f;
+
+    // Spaceship data for controlling rotation
+    pitch_radians = 0.0f;
+    roll_radians = 0.0f;
+    yaw_radians = 0.0f;
+
+    // Spaceship data for determining rotation
+    delta_pitch = 0.0f;
+    delta_roll = 0.0f;
+    delta_yaw = 0.0f;
+
+    plane_tilt = 0.5f;
 }
 
 void Realtime::finish() {
@@ -497,6 +510,85 @@ void Realtime::paint_model_geometry() {
     // Scale spaceship down
     // JANK INCOMING
     glm::quat rotation = glm::quat_cast(glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.2f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+    glm::vec4 rotation_vec = glm::vec4(rotation[0], rotation[1], rotation[2], rotation[3]);
+    // Determine how much we need to rotate the plane based on previous values
+
+    // Update yaw, pitch, and roll accordingly
+    if (delta_yaw != 0) {
+        yaw_radians += delta_yaw;
+        delta_yaw = 0.0f;
+
+        // Clamp
+        yaw_radians = std::min(yaw_radians, 0.44f);
+        yaw_radians = std::max(yaw_radians, -0.44f);
+    }
+    else {
+        // Move back to 0
+        if (yaw_radians < 0) {
+            yaw_radians += 0.44f / 60.0f;
+            yaw_radians = std::min(yaw_radians, 0.0f);
+        }
+        else if (yaw_radians > 0) {
+            yaw_radians += -0.44f / 60.0f;
+            yaw_radians = std::max(yaw_radians, 0.0f);
+        }
+    }
+
+    // Change pitch of plane
+    if (delta_pitch != 0) {
+        pitch_radians += delta_pitch;
+        delta_pitch = 0.0f;
+
+        // Clamp
+        pitch_radians = std::min(pitch_radians, 0.6f);
+        pitch_radians = std::max(pitch_radians, -0.6f);
+    }
+    else {
+        // Move back to 0
+        if (pitch_radians < 0) {
+            pitch_radians += 0.6f / 60.0f;
+            pitch_radians = std::min(pitch_radians, 0.0f);
+        }
+        else if (pitch_radians > 0) {
+            pitch_radians += -0.6f / 60.0f;
+            pitch_radians = std::max(pitch_radians, 0.0f);
+        }
+    }
+
+    // Change roll of plane
+    if (delta_roll != 0) {
+        roll_radians += delta_roll;
+        delta_roll = 0.0f;
+
+        // Clamp
+        roll_radians = std::min(roll_radians, 0.88f);
+        roll_radians = std::max(roll_radians, -0.88f);
+    }
+    else {
+        if (roll_radians < 0) {
+            roll_radians += 0.88f / 60.0f;
+            roll_radians = std::min(roll_radians, 0.0f);
+        }
+        else if (roll_radians > 0) {
+            roll_radians += -0.88f / 60.0f;
+            roll_radians = std::max(roll_radians, 0.0f);
+        }
+    }
+
+    // Incorporate changes
+    glm::vec4 yaw_rotation = rotation_to_quaternion(glm::vec3(0.0f, 1.0f, 0.0f), yaw_radians);
+    glm::vec4 pitch_rotation = rotation_to_quaternion(glm::vec3(1.0f, 0.0f, 0.0f), pitch_radians);
+    glm::vec4 roll_rotation = rotation_to_quaternion(glm::vec3(0.0f, 0.0f, 1.0f), roll_radians);
+
+    // Accumulate changes
+    glm::vec4 total_rotation = quaternion_multiply(quaternion_multiply(quaternion_multiply(roll_rotation, yaw_rotation), pitch_rotation), rotation_vec);
+
+    // Convert into a quaternion
+    rotation[0] = total_rotation[0];
+    rotation[1] = total_rotation[1];
+    rotation[2] = total_rotation[2];
+    rotation[3] = total_rotation[3];
+
     spaceship.Draw(m_spaceship_shader, glm::vec3(0.0f, -0.2f, -1.5f), rotation, glm::vec3(0.25f, 0.25f, 0.25f));
     m_spaceship_shader.Deactivate();
 }
@@ -714,7 +806,7 @@ void Realtime::generate_scene() {
 
     // Also add asteroids
     // FIX some instancing number
-    unsigned int instances = 5000;
+    unsigned int instances = settings.shapeParameter1;
     std::vector<glm::mat4> asteroid_matrices = generateAsteroidTransformations(instances);
     std::string asteroid_path = "/resources/models/asteroid/scene.gltf";
 
@@ -893,15 +985,15 @@ void Realtime::settingsChanged() {
         return;
     }
 
-    // Check if changed occurred to shape parameters
-    if (shape_param_1 != settings.shapeParameter1 || shape_param_2 != settings.shapeParameter2) {
-        makeCurrent();
+//    // Check if changed occurred to shape parameters
+//    if (shape_param_1 != settings.shapeParameter1 || shape_param_2 != settings.shapeParameter2) {
+//        makeCurrent();
 
-        // Regenerate meshes with the new shape parameters
-        shape_param_1 = settings.shapeParameter1;
-        shape_param_2 = settings.shapeParameter2;
-        updateMeshes();
-    }
+//        // Regenerate meshes with the new shape parameters
+//        shape_param_1 = settings.shapeParameter1;
+//        shape_param_2 = settings.shapeParameter2;
+//        updateMeshes();
+//    }
 
     // Check if change occurred to view plane
     if (near_plane != settings.nearPlane || far_plane != settings.farPlane) {
@@ -998,51 +1090,50 @@ glm::vec4 Realtime::rotation_to_quaternion(glm::vec3 axis, float theta) {
 // Handles rotation of camera
 void Realtime::mouseMoveEvent(QMouseEvent *event) {
     // Why thank you for encoding this all in an if statement only if the mouse is pressed
-    if (m_mouseDown) {
-        int posX = event->position().x();
-        int posY = event->position().y();
-        int deltaX = posX - m_prev_mouse_pos.x;
-        int deltaY = posY - m_prev_mouse_pos.y;
-        m_prev_mouse_pos = glm::vec2(posX, posY);
+//    if (m_mouseDown) {
+//        int posX = event->position().x();
+//        int posY = event->position().y();
+//        int deltaX = posX - m_prev_mouse_pos.x;
+//        int deltaY = posY - m_prev_mouse_pos.y;
+//        m_prev_mouse_pos = glm::vec2(posX, posY);
 
-        // Use deltaX and deltaY here to rotate
+//        // Use deltaX and deltaY here to rotate
 
-        // Similar idea to translation: accumulate all rotations, then apply to view matrices
-        glm::vec4 rotation(0.0f, 0.0f, 0.0f, 1.0f);
+//        // Similar idea to translation: accumulate all rotations, then apply to view matrices
+//        glm::vec4 rotation(0.0f, 0.0f, 0.0f, 1.0f);
 
-        // Rotation over X axis is relatively easy (since one axis is 0, it's always in world space)
-        if (deltaX != 0) {
-            // Determine amount of rotation
-            float radians = (float) deltaX * radian_conversion;
+//        // Rotation over X axis is relatively easy (since one axis is 0, it's always in world space)
+//        if (deltaX != 0) {
+//            // Determine amount of rotation
+//            float radians = (float) deltaX * radian_conversion;
 
-            // Axis is 0, 0, 1 (since Z and Y axis are flipped in OpenGL)
-            glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(0.0f, 1.0f, 0.0f), -radians);
-            rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
-        }
+//            // Axis is 0, 0, 1 (since Z and Y axis are flipped in OpenGL)
+//            glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(0.0f, 1.0f, 0.0f), -radians);
+//            rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
+//        }
 
-        // Rotation over Y axis it not as easy (we do however, have access to the left and right axis)
-        if (deltaY != 0) {
-            // Determine amount of rotation
-            float radians = (float) deltaY * radian_conversion;
+//        // Rotation over Y axis it not as easy (we do however, have access to the left and right axis)
+//        if (deltaY != 0) {
+//            // Determine amount of rotation
+//            float radians = (float) deltaY * radian_conversion;
 
-            // Axis is 0, 1, 0
-            glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(m_camera.get_left()), radians);
-            rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
-        }
+//            // Axis is 0, 1, 0
+//            glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(m_camera.get_left()), radians);
+//            rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
+//        }
 
-        // Apply rotation updates to camera
-        if (deltaX != 0 || deltaY != 0) {
-            // Compute newly rotated look and up vectors that define camera rotation matrix
-            glm::vec4 new_look = glm::vec4(quaternion_rotate(glm::vec3(m_camera.get_camera_look()), rotation), 0.0f);
-            glm::vec4 new_up = glm::vec4(quaternion_rotate(glm::vec3(m_camera.get_camera_up()), rotation), 0.0f);
+//        // Apply rotation updates to camera
+//        if (deltaX != 0 || deltaY != 0) {
+//            // Compute newly rotated look and up vectors that define camera rotation matrix
+//            glm::vec4 new_look = glm::vec4(quaternion_rotate(glm::vec3(m_camera.get_camera_look()), rotation), 0.0f);
+//            glm::vec4 new_up = glm::vec4(quaternion_rotate(glm::vec3(m_camera.get_camera_up()), rotation), 0.0f);
 
-            // Apply these changes to the view matrix
-            m_camera.update_rotation_matrix(new_look, new_up);
-            m_camera.update_view_matrix();
-        }
+//            // Apply these changes to the view matrix
+//            m_camera.update_rotation_matrix(new_look, new_up);
+//            m_camera.update_view_matrix();
+//        }
 
         update(); // asks for a PaintGL() call to occur
-    }
 }
 
 // Handles translation of camera
@@ -1060,6 +1151,7 @@ void Realtime::timerEvent(QTimerEvent *event) {
     // Similar idea to speed: accumulate all rotations, then apply to view matrices
     glm::vec4 rotation(0.0f, 0.0f, 0.0f, 1.0f);
 
+    // NOTE: Accumulate change in all values
 
     // If up arrow pressed, speed up
     if (m_keyMap[Qt::Key_Up]) {
@@ -1074,6 +1166,7 @@ void Realtime::timerEvent(QTimerEvent *event) {
     // If left arrow pressed, yaw left
     if (m_keyMap[Qt::Key_Left]) {
         float radians = 35.f * deltaTime * radian_conversion;
+        delta_yaw -= radians / plane_tilt;
         // Rotate around the up vector
         glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(m_camera.get_camera_up()), radians);
         rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
@@ -1083,6 +1176,7 @@ void Realtime::timerEvent(QTimerEvent *event) {
     // If right arrow pressed, yaw right
     if (m_keyMap[Qt::Key_Right]) {
         float radians = 35.f * -deltaTime * radian_conversion;
+        delta_yaw -= radians / plane_tilt;
         // Rotate around the up vector
         glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(m_camera.get_camera_up()), radians);
         rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
@@ -1091,7 +1185,8 @@ void Realtime::timerEvent(QTimerEvent *event) {
 
     // If W pressed, pitch up
     if (m_keyMap[Qt::Key_W]) {
-        float radians = 200.f * -deltaTime * radian_conversion;
+        float radians = 100.f * deltaTime * radian_conversion;
+        delta_pitch += radians / plane_tilt;
         // Rotate around the up vector
         glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(m_camera.get_left()), radians);
         rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
@@ -1100,7 +1195,8 @@ void Realtime::timerEvent(QTimerEvent *event) {
 
     // If S pressed, pitch down
     if (m_keyMap[Qt::Key_S]) {
-        float radians = 100.f * deltaTime * radian_conversion;
+        float radians = 200.f * -deltaTime * radian_conversion;
+        delta_pitch += radians / plane_tilt;
         // Rotate around the up vector
         glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(m_camera.get_left()), radians);
         rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
@@ -1110,6 +1206,7 @@ void Realtime::timerEvent(QTimerEvent *event) {
     // If A pressed, roll left
     if (m_keyMap[Qt::Key_A]) {
         float radians = 250.f * -deltaTime * radian_conversion;
+        delta_roll += radians / plane_tilt;
         // Rotate around the up vector
         glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(m_camera.get_camera_look()), radians);
         rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
@@ -1119,6 +1216,7 @@ void Realtime::timerEvent(QTimerEvent *event) {
     // If D pressed, roll right
     if (m_keyMap[Qt::Key_D]) {
         float radians = 250.f * deltaTime * radian_conversion;
+        delta_roll += radians / plane_tilt;
         // Rotate around the up vector
         glm::vec4 quat_to_rotate = rotation_to_quaternion(glm::vec3(m_camera.get_camera_look()), radians);
         rotation = glm::normalize(quaternion_multiply(rotation, quat_to_rotate));
@@ -1221,7 +1319,7 @@ void printMatrix(const glm::mat4& matrix) {
 // I take it this generates NUMBER amount of random model matrices? Nice
 std::vector<glm::mat4> Realtime::generateAsteroidTransformations(const unsigned int number) {
     const float radius = 100.0f;
-    const float radiusDeviation = 50.0f;
+    const float radiusDeviation = settings.shapeParameter2;
     std::vector<glm::mat4> instanceMatrix;
 
     auto randf = []() {

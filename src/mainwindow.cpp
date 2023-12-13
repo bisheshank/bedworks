@@ -25,7 +25,7 @@ void MainWindow::initialize() {
     font.setPointSize(12);
     font.setBold(true);
     QLabel *tesselation_label = new QLabel(); // Parameters label
-    tesselation_label->setText("Tesselation");
+    tesselation_label->setText("Asteroid Generation");
     tesselation_label->setFont(font);
     QLabel *camera_label = new QLabel(); // Camera label
     camera_label->setText("Camera");
@@ -37,9 +37,9 @@ void MainWindow::initialize() {
     ec_label->setText("Extra Credit");
     ec_label->setFont(font);
     QLabel *param1_label = new QLabel(); // Parameter 1 label
-    param1_label->setText("Parameter 1:");
+    param1_label->setText("Quantity:");
     QLabel *param2_label = new QLabel(); // Parameter 2 label
-    param2_label->setText("Parameter 2:");
+    param2_label->setText("Density:");
     QLabel *near_label = new QLabel(); // Near plane label
     near_label->setText("Near Plane:");
     QLabel *far_label = new QLabel(); // Far plane label
@@ -72,28 +72,28 @@ void MainWindow::initialize() {
 
     // Create slider controls to control parameters
     p1Slider = new QSlider(Qt::Orientation::Horizontal); // Parameter 1 slider
-    p1Slider->setTickInterval(1);
-    p1Slider->setMinimum(1);
-    p1Slider->setMaximum(25);
-    p1Slider->setValue(1);
+    p1Slider->setTickInterval(25);
+    p1Slider->setMinimum(1000);
+    p1Slider->setMaximum(10000);
+    p1Slider->setValue(3000);
 
     p1Box = new QSpinBox();
-    p1Box->setMinimum(1);
-    p1Box->setMaximum(25);
-    p1Box->setSingleStep(1);
-    p1Box->setValue(1);
+    p1Box->setMinimum(1000);
+    p1Box->setMaximum(10000);
+    p1Box->setSingleStep(25);
+    p1Box->setValue(3000);
 
     p2Slider = new QSlider(Qt::Orientation::Horizontal); // Parameter 2 slider
     p2Slider->setTickInterval(1);
-    p2Slider->setMinimum(1);
-    p2Slider->setMaximum(25);
-    p2Slider->setValue(1);
+    p2Slider->setMinimum(15);
+    p2Slider->setMaximum(100);
+    p2Slider->setValue(25);
 
     p2Box = new QSpinBox();
-    p2Box->setMinimum(1);
-    p2Box->setMaximum(25);
+    p2Box->setMinimum(15);
+    p2Box->setMaximum(100);
     p2Box->setSingleStep(1);
-    p2Box->setValue(1);
+    p2Box->setValue(25);
 
     // Adds the slider and number box to the parameter layouts
     l1->addWidget(p1Slider);
@@ -126,14 +126,14 @@ void MainWindow::initialize() {
     farSlider = new QSlider(Qt::Orientation::Horizontal); // Far plane slider
     farSlider->setTickInterval(1);
     farSlider->setMinimum(1000);
-    farSlider->setMaximum(100000);
-    farSlider->setValue(10000);
+    farSlider->setMaximum(1000000);
+    farSlider->setValue(1000000);
 
     farBox = new QDoubleSpinBox();
     farBox->setMinimum(10.f);
-    farBox->setMaximum(1000.f);
+    farBox->setMaximum(10000.f);
     farBox->setSingleStep(0.1f);
-    farBox->setValue(100.f);
+    farBox->setValue(10000.f);
 
     // Adds the slider and number box to the parameter layouts
     lnear->addWidget(nearSlider);

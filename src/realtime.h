@@ -178,4 +178,17 @@ private:
 
     // Spaceship data for controlling flight
     float speed = 0.1f;
+
+    // Spaceship data for controlling rotation
+    float pitch_radians = 0.0f;
+    float roll_radians = 0.0f;
+    float yaw_radians = 0.0f;
+
+    // Spaceship data for determining rotation
+    float delta_pitch = 0.0f;
+    float delta_roll = 0.0f;
+    float delta_yaw = 0.0f;
+
+    // Param that controls how much the plane tilts
+    float plane_tilt = 7.5f;
 };
