@@ -70,6 +70,7 @@ Realtime::Realtime(QWidget *parent)
     m_model_shader = Shader();
 
     planet = Model();
+    asteroids = Model();
 }
 
 void Realtime::finish() {
@@ -157,14 +158,6 @@ void Realtime::initializeGL() {
     // Now that we've initialized GL, we can actually process settings changes
     gl_initialized = true;
     updateMeshes();
-
-    // Here is where we can load planet data
-    std::string working_dir = QDir::currentPath().toStdString();
-    std::string asteroid_path = "/resources/models/asteroid/scene.gltf";
-
-    std::cerr << "Trying to load model...\n";
-    planet.loadModel((working_dir + asteroid_path).c_str());
-    std::cerr << "Planet model loaded using path: " << working_dir << asteroid_path << "\n";
 
     // Create data that encodes the two triangles that make up a framebuffer
     // Allows for mapping over our rendered image as if it is a texture
@@ -300,6 +293,7 @@ void Realtime::paintGL() {
     // Now paint the scene geometry
     paint_scene_geometry();
 
+    // The really neat stuff we actually care about!!!
     paint_model_geometry();
 
     // Render scene to the default framebuffer (the one that we actually display our stuff on)
@@ -335,6 +329,7 @@ void Realtime::paint_model_geometry() {
 
     // Uniform for light needs to be sent via this func, other samplers are sent via model
     // Camera position
+    // TODO: Change to actually load in light data like the original Phong Shader
     location = glGetUniformLocation(m_model_shader.ID, "camera_pos");
     Debug::glErrorCheck();
     glUniform3f(location, m_camera.get_camera_pos()[0], m_camera.get_camera_pos()[1], m_camera.get_camera_pos()[2]);
@@ -349,7 +344,11 @@ void Realtime::paint_model_geometry() {
     glUniform3f(location, 0.0f, 0.0f, 0.0f);
     Debug::glErrorCheck();
 
+    // Draw our two models
+    // TODO: Add more models
     planet.Draw(m_model_shader);
+    asteroids.Draw(m_model_shader);
+
 
     m_model_shader.Deactivate();
 }
@@ -554,6 +553,19 @@ void Realtime::resizeGL(int w, int h) {
     update();
 }
 
+// Function that generates a new allotment of asteroids
+void Realtime::generate_scene() {
+    makeCurrent();
+    // Let's just focus on generating a new planet
+    std::string working_dir = QDir::currentPath().toStdString();
+    std::string planet_path = "/resources/models/asteroid/scene.gltf";
+
+    std::cerr << "Trying to load model...\n";
+    planet.loadModel((working_dir + planet_path).c_str());
+    std::cerr << "Planet model loaded using path: " << working_dir << planet_path << "\n";
+}
+
+// Load a new scene file's data into the scene
 void Realtime::sceneChanged() {
     makeCurrent();
     // Clear existing data

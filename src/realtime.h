@@ -46,6 +46,7 @@ public:
     Realtime(QWidget *parent = nullptr);
     void finish();                                      // Called on program exit
     void sceneChanged();
+    void generate_scene();
     void settingsChanged();
     void saveViewportImage(std::string filePath);
 
@@ -161,5 +162,7 @@ private:
     std::vector<glm::mat4> generateAsteroidTransformations(const unsigned int number = 2000);
 
     // For holding different models to instantiate
+    // TODO: Possibly make this a vector with multiple planets
     Model planet;
+    Model asteroids;
 };
