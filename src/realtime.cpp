@@ -299,6 +299,43 @@ void Realtime::paintGL() {
     paint_post_process(m_fbo_texture);
 }
 
+// New func to test painting model shaders
+void Realtime::paint_model_geometry() {
+    m_model_shader.Activate();
+
+    // Send necessary uniforms for camera
+    GLuint location;
+    location = glGetUniformLocation(m_model_shader.ID, "view_matrix");
+    Debug::glErrorCheck();
+    glUniformMatrix4fv(location, 1, GL_FALSE, &((m_camera.get_view_matrix())[0][0]));
+    Debug::glErrorCheck();
+
+    location = glGetUniformLocation(m_model_shader.ID, "proj_matrix");
+    Debug::glErrorCheck();
+    glUniformMatrix4fv(location, 1, GL_FALSE, &((m_camera.get_projection_matrix()))[0][0]);
+    Debug::glErrorCheck();
+
+    // Remaining uniforms for vertex shader sent via model
+
+    // Uniform for light needs to be sent via this func, other samplers are sent via model
+    // Camera position
+    location = glGetUniformLocation(m_model_shader.ID, "camera_pos");
+    Debug::glErrorCheck();
+    glUniform3f(location, m_camera.get_camera_pos()[0], m_camera.get_camera_pos()[1], m_camera.get_camera_pos()[2]);
+    Debug::glErrorCheck();
+
+    location = glGetUniformLocation(m_model_shader.ID, "light_color");
+    Debug::glErrorCheck();
+    glUniform4f(location, 1.0f, 1.0f, 1.0f, 1.0f);
+    Debug::glErrorCheck();
+    location = glGetUniformLocation(m_model_shader.ID, "light_pos");
+    Debug::glErrorCheck();
+    glUniform3f(location, 0.0f, 0.0f, 0.0f);
+    Debug::glErrorCheck();
+
+    m_model_shader.Deactivate();
+}
+
 // Helper function to apply post processing effects to rendered image
 void Realtime::paint_post_process(GLuint texture) {
     // Using the framebuffer shader for postprocessing
