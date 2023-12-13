@@ -14,6 +14,7 @@ std::string get_file_contents(const char* filename)
         in.close();
         return(contents);
     }
+    std::cerr << "Throwing exception from bad file load of file: " << filename << "\n";
     throw(errno);
 }
 

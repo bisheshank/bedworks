@@ -123,6 +123,7 @@ private:
     Shader m_model_shader;
     Shader m_instancing_shader;
     Shader m_skybox_shader;
+    Shader m_spaceship_shader;
 
     // Skybox!
     Skybox box;
@@ -171,4 +172,7 @@ private:
     // TODO: Possibly make this a vector with multiple planets
     Model planet;
     Model asteroids;
+
+    // THE SPACESHIP
+    Model spaceship;
 };

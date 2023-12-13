@@ -71,10 +71,12 @@ Realtime::Realtime(QWidget *parent)
     m_model_shader = Shader();
     m_instancing_shader = Shader();
     m_skybox_shader = Shader();
+    m_spaceship_shader = Shader();
 
     // MODELS!
     planet = Model();
     asteroids = Model();
+    spaceship = Model();
 
     // SKYBOX!
     box = Skybox();
@@ -104,6 +106,7 @@ void Realtime::finish() {
     // Clean up all associated model data here
     planet.cleanup();
     asteroids.cleanup();
+    spaceship.cleanup();
 
     // Cleanup all shader stuff here
     m_phong_shader.Delete();
@@ -111,6 +114,7 @@ void Realtime::finish() {
     m_model_shader.Delete();
     m_instancing_shader.Delete();
     m_skybox_shader.Delete();
+    m_spaceship_shader.Delete();
 
     this->doneCurrent();
 }
@@ -170,6 +174,7 @@ void Realtime::initializeGL() {
     m_model_shader.loadData(":/resources/shaders/model.vert", ":/resources/shaders/model.frag");
     m_instancing_shader.loadData(":/resources/shaders/instancing.vert", ":/resources/shaders/model.frag");
     m_skybox_shader.loadData(":/resources/shaders/skybox.vert", ":/resources/shaders/skybox.frag");
+    m_spaceship_shader.loadData(":/resources/shaders/spaceship.vert", ":/resources/shaders/model.frag");
 
     // The skybox shouldn't change when loading a new scene (only where the model is, so we can load it here)
     // Note the order for the elements of the Skybox must be in:
@@ -190,6 +195,12 @@ void Realtime::initializeGL() {
 
     // When the program starts, the skybox should be loaded
     box.load_texture(skybox_images);
+
+    // Load the spaceship in at start
+    std::cerr << "Trying to load spaceship model...\n";
+    std::string spaceship_path = "/resources/models/airplane/scene.gltf";
+    spaceship.loadModel((working_dir + spaceship_path).c_str());
+    std::cerr << "Spaceship model loaded using path: " << working_dir << spaceship_path << "\n";
 
     // Now that we've initialized GL, we can actually process settings changes
     gl_initialized = true;
@@ -410,6 +421,7 @@ void Realtime::paint_model_geometry() {
 
     // Draw planet using model shader (since it is not instanced
     planet.Draw(m_model_shader);
+
     m_model_shader.Deactivate();
 
     // Asteroids need to be configured to use separate model shader
@@ -447,6 +459,39 @@ void Realtime::paint_model_geometry() {
     asteroids.Draw(m_instancing_shader);
 
     m_instancing_shader.Deactivate();
+
+    // Draw the spaceship
+    m_spaceship_shader.Activate();
+    // Send camera uniforms
+    location = glGetUniformLocation(m_spaceship_shader.ID, "inverse_view_matrix");
+    Debug::glErrorCheck();
+    glUniformMatrix4fv(location, 1, GL_FALSE, &((m_camera.get_inverse_view_matrix())[0][0]));
+    Debug::glErrorCheck();
+
+    location = glGetUniformLocation(m_spaceship_shader.ID, "proj_matrix");
+    Debug::glErrorCheck();
+    glUniformMatrix4fv(location, 1, GL_FALSE, &((m_camera.get_projection_matrix()))[0][0]);
+    Debug::glErrorCheck();
+
+    location = glGetUniformLocation(m_spaceship_shader.ID, "camera_pos");
+    Debug::glErrorCheck();
+    glUniform3f(location, m_camera.get_camera_pos()[0], m_camera.get_camera_pos()[1], m_camera.get_camera_pos()[2]);
+    Debug::glErrorCheck();
+
+    location = glGetUniformLocation(m_spaceship_shader.ID, "light_color");
+    Debug::glErrorCheck();
+    glUniform4f(location, 1.0f, 1.0f, 1.0f, 1.0f);
+    Debug::glErrorCheck();
+    location = glGetUniformLocation(m_spaceship_shader.ID, "light_pos");
+    Debug::glErrorCheck();
+    glUniform3f(location, 0.0f, 0.0f, 0.0f);
+    Debug::glErrorCheck();
+
+    // Scale spaceship down
+    // JANK INCOMING
+    glm::quat rotation = glm::quat_cast(glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.2f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+    spaceship.Draw(m_spaceship_shader, glm::vec3(0.0f, -0.2f, -1.5f), rotation, glm::vec3(0.25f, 0.25f, 0.25f));
+    m_spaceship_shader.Deactivate();
 }
 
 // Helper function to apply post processing effects to rendered image
@@ -662,7 +707,7 @@ void Realtime::generate_scene() {
 
     // Also add asteroids
     // FIX some instancing number
-    unsigned int instances = 2500;
+    unsigned int instances = 5000;
     std::vector<glm::mat4> asteroid_matrices = generateAsteroidTransformations(instances);
     std::string asteroid_path = "/resources/models/asteroid/scene.gltf";
 
@@ -1037,7 +1082,7 @@ void Realtime::timerEvent(QTimerEvent *event) {
     // Check if any keys were actually pressed (any change happened)
     if (glm::length(delta_pos) > 0.1) {
         // Scale the amount of movement accordingly
-        delta_pos = deltaTime * 5.0f * glm::normalize(delta_pos);
+        delta_pos = deltaTime * 15.0f * glm::normalize(delta_pos);
 
         // Update the position and generate a new view matrix
         m_camera.update_translation_matrix(m_camera.get_camera_pos() + delta_pos);
@@ -1124,7 +1169,7 @@ void printMatrix(const glm::mat4& matrix) {
 // I take it this generates NUMBER amount of random model matrices? Nice
 std::vector<glm::mat4> Realtime::generateAsteroidTransformations(const unsigned int number) {
     const float radius = 100.0f;
-    const float radiusDeviation = 25.0f;
+    const float radiusDeviation = 50.0f;
     std::vector<glm::mat4> instanceMatrix;
 
     auto randf = []() {
@@ -1142,7 +1187,7 @@ std::vector<glm::mat4> Realtime::generateAsteroidTransformations(const unsigned 
         FastNoise perlinNoise;
         perlinNoise.SetSeed(randomSeed);
 
-        // Generate x and y using Perlin noise
+        // Generate x and y
         float x = randf();
         float y = ((rand() % 2) * 2 - 1) * sqrt(1.0f - x * x);
         float finalRadius = radius + randf() * radiusDeviation;
@@ -1158,16 +1203,12 @@ std::vector<glm::mat4> Realtime::generateAsteroidTransformations(const unsigned 
                                         glm::vec3(y, 0.0f, x) :
                                         glm::vec3(x, 0.0f, y);
 
-        // Holds transformations before multiplying them
-        glm::vec3 tempTranslation = translationAxis * finalRadius;
-        glm::quat tempRotation = glm::quat(1.0f, randf(), randf(), randf());
-        glm::vec3 tempScale = 0.1f * glm::vec3(randf(), randf(), randf());
-
         // Initialize matrices
         glm::mat4 trans = glm::translate(glm::mat4(1.0f),
-                                         tempTranslation + glm::vec3(0.0f, verticalOffset, 0.0f));
-        glm::mat4 rot = glm::mat4_cast(tempRotation);
-        glm::mat4 sca = glm::scale(glm::mat4(1.0f), tempScale);
+                                         translationAxis * finalRadius +
+                                             glm::vec3(0.0f, verticalOffset, 0.0f));
+        glm::mat4 rot = glm::mat4_cast(glm::quat(randf(), randf(), randf(), randf()));
+        glm::mat4 sca = glm::scale(glm::mat4(1.0f),  randf() * glm::vec3(0.1f));
 
         // Push matrix transformation
         instanceMatrix.push_back(trans * rot * sca);

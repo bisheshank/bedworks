@@ -1,0 +1,11 @@
+Model Information:
+* title:	Mother Spaceship
+* source:	https://sketchfab.com/3d-models/mother-spaceship-9e0e86c41ed24676a7c8b25fdfa002c0
+* author:	TigerNDV (https://sketchfab.com/TigerNDV)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Mother Spaceship" (https://sketchfab.com/3d-models/mother-spaceship-9e0e86c41ed24676a7c8b25fdfa002c0) by TigerNDV (https://sketchfab.com/TigerNDV) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
