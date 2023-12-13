@@ -1,4 +1,5 @@
 #include"Texture.h"
+#include <stdexcept>
 
 Texture::Texture(const char* image, const char* texType, GLuint slot)
 {
@@ -14,18 +15,25 @@ Texture::Texture(const char* image, const char* texType, GLuint slot)
 
     // Generates an OpenGL texture object
     glGenTextures(1, &ID);
+    Debug::glErrorCheck();
     // Assigns the texture to a Texture Unit
     glActiveTexture(GL_TEXTURE0 + slot);
+    Debug::glErrorCheck();
     unit = slot;
     glBindTexture(GL_TEXTURE_2D, ID);
+    Debug::glErrorCheck();
 
     // Configures the type of algorithm that is used to make the image smaller or bigger
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+    Debug::glErrorCheck();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    Debug::glErrorCheck();
 
     // Configures the way the texture repeats (if it does at all)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    Debug::glErrorCheck();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    Debug::glErrorCheck();
 
     // Extra lines in case you choose to use GL_CLAMP_TO_BORDER
     // float flatColor[] = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -73,18 +81,21 @@ Texture::Texture(const char* image, const char* texType, GLuint slot)
                 );
     else
         throw std::invalid_argument("Automatic Texture type recognition failed");
+    Debug::glErrorCheck();
 
     // Generates MipMaps
     glGenerateMipmap(GL_TEXTURE_2D);
+    Debug::glErrorCheck();
 
     // Deletes the image data as it is already in the OpenGL Texture object
     stbi_image_free(bytes);
 
     // Unbinds the OpenGL Texture object so that it can't accidentally be modified
     glBindTexture(GL_TEXTURE_2D, 0);
+    Debug::glErrorCheck();
 }
 
-void Texture::texUnit(Shader& shader, const char* uniform, GLuint unit)
+void Texture::texUnit(Shader shader, const char* uniform, GLuint unit)
 {
     // Gets the location of the uniform
     GLuint texUni = glGetUniformLocation(shader.ID, uniform);
@@ -92,20 +103,29 @@ void Texture::texUnit(Shader& shader, const char* uniform, GLuint unit)
     shader.Activate();
     // Sets the value of the uniform
     glUniform1i(texUni, unit);
+    Debug::glErrorCheck();
+
+    // Probably want to reset state
+    // NOTE: May want to remove for performance issues
+    // shader.Deactivate();
 }
 
 void Texture::Bind()
 {
     glActiveTexture(GL_TEXTURE0 + unit);
+    Debug::glErrorCheck();
     glBindTexture(GL_TEXTURE_2D, ID);
+    Debug::glErrorCheck();
 }
 
 void Texture::Unbind()
 {
     glBindTexture(GL_TEXTURE_2D, 0);
+    Debug::glErrorCheck();
 }
 
 void Texture::Delete()
 {
     glDeleteTextures(1, &ID);
+    Debug::glErrorCheck();
 }

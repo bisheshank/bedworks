@@ -1,10 +1,8 @@
-#ifndef TEXTURE_CLASS_H
-#define TEXTURE_CLASS_H
+#pragma once
 
-#include "libraries/include/glad/glad.h"
+#include "utils/debug.h"
 #include "libraries/include/stb/stb_image.h"
-
-#include"shaderClass.h"
+#include "utils/shader.h"
 
 class Texture
 {
@@ -15,8 +13,8 @@ public:
 
     Texture(const char* image, const char* texType, GLuint slot);
 
-    // Assigns a texture unit to a texture
-    void texUnit(Shader& shader, const char* uniform, GLuint unit);
+    // Assigns a texture unit to a texture stored in inputted uniform
+    void texUnit(Shader shader, const char* uniform, GLuint unit);
     // Binds a texture
     void Bind();
     // Unbinds a texture
@@ -24,4 +22,3 @@ public:
     // Deletes a texture
     void Delete();
 };
-#endif

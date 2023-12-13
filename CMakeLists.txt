@@ -55,7 +55,7 @@ add_executable(${PROJECT_NAME}
     src/primitives/cone.h src/primitives/cone.cpp
 
 
-    src/utils/model.h
+
     src/noise/fastnoise.h src/noise/fastnoise.cpp
     src/meshes/texture.h src/meshes/texture.cpp
     src/meshes/model.h src/meshes/model.cpp
@@ -64,6 +64,11 @@ add_executable(${PROJECT_NAME}
     libraries/include/glad/glad.h
     libraries/include/json/json.h
     libraries/include/stb/stb_image.h
+    src/utils/ebo.h src/utils/ebo.cpp
+    src/utils/vao.h src/utils/vao.cpp
+    src/utils/vbo.h src/utils/vbo.cpp
+    src/utils/shader.h src/utils/shader.cpp
+    src/glad.c
 )
 
 # GLM: this creates its library and allows you to `#include "glm/..."`
