@@ -68,6 +68,8 @@ Realtime::Realtime(QWidget *parent)
     m_phong_shader = Shader();
     m_framebuffer_shader = Shader();
     m_model_shader = Shader();
+
+    planet = Model();
 }
 
 void Realtime::finish() {
@@ -150,7 +152,13 @@ void Realtime::initializeGL() {
     gl_initialized = true;
     updateMeshes();
 
-    generateAsteroidTransformations();
+    // Here is where we can load planet data
+    std::string working_dir = QDir::currentPath().toStdString();
+    std::string asteroid_path = "/resources/models/planet/scene.gltf";
+
+    std::cerr << "Trying to load model...\n";
+    planet.loadModel((working_dir + asteroid_path).c_str());
+    std::cerr << "Planet model loaded using path: " << working_dir << asteroid_path << "\n";
 
     // Create data that encodes the two triangles that make up a framebuffer
     // Allows for mapping over our rendered image as if it is a texture
@@ -286,6 +294,8 @@ void Realtime::paintGL() {
     // Now paint the scene geometry
     paint_scene_geometry();
 
+    paint_model_geometry();
+
     // Render scene to the default framebuffer (the one that we actually display our stuff on)
     glBindFramebuffer(GL_FRAMEBUFFER, default_fbo);
     Debug::glErrorCheck();
@@ -332,6 +342,8 @@ void Realtime::paint_model_geometry() {
     Debug::glErrorCheck();
     glUniform3f(location, 0.0f, 0.0f, 0.0f);
     Debug::glErrorCheck();
+
+    planet.Draw(m_model_shader);
 
     m_model_shader.Deactivate();
 }

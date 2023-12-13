@@ -11,8 +11,13 @@ std::string get_file_contents(const char* filename);
 class Model
 {
 public:
-    // Loads in a model from a file and stores tha information in 'data', 'JSON', and 'file'
+    // Constructor for unloaded model
+    Model();
+    // Constructor if we already have loaded data
     Model(const char* file, unsigned int instancing = 1, std::vector<glm::mat4> instanceMatrix = {});
+
+    // Loads in a model from a file and stores tha information in 'data', 'JSON', and 'file'
+    void loadModel(const char* file, unsigned int instances = 1, std::vector<glm::mat4> instanceMatrix = {});
 
     void Draw
         (
@@ -27,8 +32,12 @@ private:
     const char* file;
     std::vector<unsigned char> data;
     json JSON;
+
+    // Determines if model has been instantiated or not (cannot be drawn otherwise)
+    bool instantiated = false;
+
     // Holds number of instances (if 1 the mesh will be rendered normally)
-    unsigned int instancing;
+    unsigned int instances;
 
     // All the meshes and transformations
     std::vector<Mesh> meshes;

@@ -17,8 +17,23 @@ std::string get_file_contents(const char* filename)
     throw(errno);
 }
 
-Model::Model(const char* file, unsigned int instancing, std::vector<glm::mat4> instanceMatrix)
+// Default constructor
+Model::Model() {
+    instantiated = false;
+}
+
+Model::Model(const char* file, unsigned int instances, std::vector<glm::mat4> instanceMatrix)
 {
+    instantiated = false;
+    loadModel(file, instances, instanceMatrix);
+}
+
+void Model::loadModel(const char* file, unsigned int instances, std::vector<glm::mat4> instanceMatrix) {
+    // If the model has already been instantiated, skip
+    if (instantiated) {
+        return;
+    }
+
     // Make a JSON object
     std::string text = get_file_contents(file);
     JSON = json::parse(text);
@@ -27,16 +42,24 @@ Model::Model(const char* file, unsigned int instancing, std::vector<glm::mat4> i
     Model::file = file;
     data = getData();
 
-    Model::instancing = instancing;
+    Model::instances = instances;
     Model::instanceMatrix = instanceMatrix;
 
     // Traverse all nodes
     traverseNode(0);
+
+    // Mark this model as being instantiated
+    instantiated = true;
 }
 
 // NOTE: Also requires camera and light data to be passed in first
 void Model::Draw(Shader& shader, glm::vec3 translation, glm::quat rotation, glm::vec3 scale)
 {
+    // Do not draw model if data hasn't been loaded yet
+    if (!instantiated) {
+        return;
+    }
+
     // Go over all meshes and draw each one
     for (unsigned int i = 0; i < meshes.size(); i++)
     {
@@ -66,7 +89,7 @@ void Model::loadMesh(unsigned int indMesh)
     std::vector<Texture> textures = getTextures();
 
     // Combine the vertices, indices, and textures into a mesh
-    meshes.push_back(Mesh(vertices, indices, textures, instancing, instanceMatrix));
+    meshes.push_back(Mesh(vertices, indices, textures, instances, instanceMatrix));
 }
 
 void Model::traverseNode(unsigned int nextNode, glm::mat4 matrix)

@@ -18,17 +18,17 @@ in vec2 texCoord;
 uniform sampler2D diffuse0;
 uniform sampler2D specular0;
 // Gets the color of the light from the main function
-uniform vec4 lightColor;
+uniform vec4 light_color;
 // Gets the position of the light from the main function
-uniform vec3 lightPos;
+uniform vec3 light_pos;
 // Gets the position of the camera from the main function
-uniform vec3 camPos;
+uniform vec3 camera_pos;
 
 
 vec4 pointLight()
 {
         // used in two variables so I calculate it here to not have to do it twice
-        vec3 lightVec = lightPos - crntPos;
+        vec3 lightVec = light_pos - crntPos;
 
         // intensity of light with respect to distance
         float dist = length(lightVec);
@@ -46,12 +46,12 @@ vec4 pointLight()
 
         // specular lighting
         float specularLight = 0.50f;
-        vec3 viewDirection = normalize(camPos - crntPos);
+        vec3 viewDirection = normalize(camera_pos - crntPos);
         vec3 reflectionDirection = reflect(-lightDirection, normal);
         float specAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 16);
         float specular = specAmount * specularLight;
 
-        return (texture(diffuse0, texCoord) * (diffuse * inten + ambient) + texture(specular0, texCoord).r * specular * inten) * lightColor;
+        return (texture(diffuse0, texCoord) * (diffuse * inten + ambient) + texture(specular0, texCoord).r * specular * inten) * light_color;
 }
 
 vec4 direcLight()
@@ -66,12 +66,12 @@ vec4 direcLight()
 
         // specular lighting
         float specularLight = 0.50f;
-        vec3 viewDirection = normalize(camPos - crntPos);
+        vec3 viewDirection = normalize(camera_pos - crntPos);
         vec3 reflectionDirection = reflect(-lightDirection, normal);
         float specAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 16);
         float specular = specAmount * specularLight;
 
-        return (texture(diffuse0, texCoord) * (diffuse + ambient) + texture(specular0, texCoord).r * specular) * lightColor;
+        return (texture(diffuse0, texCoord) * (diffuse + ambient) + texture(specular0, texCoord).r * specular) * light_color;
 }
 
 vec4 spotLight()
@@ -85,12 +85,12 @@ vec4 spotLight()
 
         // diffuse lighting
         vec3 normal = normalize(Normal);
-        vec3 lightDirection = normalize(lightPos - crntPos);
+        vec3 lightDirection = normalize(light_pos - crntPos);
         float diffuse = max(dot(normal, lightDirection), 0.0f);
 
         // specular lighting
         float specularLight = 0.50f;
-        vec3 viewDirection = normalize(camPos - crntPos);
+        vec3 viewDirection = normalize(camera_pos - crntPos);
         vec3 reflectionDirection = reflect(-lightDirection, normal);
         float specAmount = pow(max(dot(viewDirection, reflectionDirection), 0.0f), 16);
         float specular = specAmount * specularLight;
@@ -99,15 +99,15 @@ vec4 spotLight()
         float angle = dot(vec3(0.0f, -1.0f, 0.0f), -lightDirection);
         float inten = clamp((angle - outerCone) / (innerCone - outerCone), 0.0f, 1.0f);
 
-        return (texture(diffuse0, texCoord) * (diffuse * inten + ambient) + texture(specular0, texCoord).r * specular * inten) * lightColor;
+        return (texture(diffuse0, texCoord) * (diffuse * inten + ambient) + texture(specular0, texCoord).r * specular * inten) * light_color;
 }
 
 
 void main()
 {
         // outputs final color
-        // FragColor = direcLight();
+        FragColor = direcLight();
 
     // PLACEHOLDER:
-    FragColor = vec4(1.0);
+    // FragColor = vec4(1.0);
 }

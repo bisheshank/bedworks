@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 
 #include <unordered_map>
+#include <QFileDialog>
 #include <QElapsedTimer>
 #include <QOpenGLWidget>
 #include <QTime>
@@ -151,11 +152,14 @@ private:
     int m_fbo_width;
 
     // Controls how much we convolve by (blur filter)
-    int filter_radius = 2;
+    int filter_radius = 5;
 
     // Default FBO counter (the one that actually displays stuff lol)
     GLuint default_fbo = 2;
 
     // For asteroid generation
     std::vector<glm::mat4> generateAsteroidTransformations(const unsigned int number = 2000);
+
+    // For holding different models to instantiate
+    Model planet;
 };
