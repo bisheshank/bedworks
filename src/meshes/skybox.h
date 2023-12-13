@@ -25,7 +25,6 @@ private:
     GLuint cubemap_VAO;
     GLuint cubemap_VBO;
     GLuint cubemap_texture;
-    GLuint cubemap_EBO;
 
     // Identifies if the skybox has been instantiated yet
     bool instantiated = false;

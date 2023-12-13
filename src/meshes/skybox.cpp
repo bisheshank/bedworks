@@ -5,7 +5,6 @@ Skybox::Skybox() {
     // Initialize the empty VBOs to 0 so we don't try to delete them
     cubemap_VBO = 0;
     cubemap_texture = 0;
-    cubemap_EBO = 0;
     cubemap_VAO = 0;
 
     // Skybox hasn't been instantiated yet
@@ -62,34 +61,10 @@ void Skybox::load_texture(std::vector<std::string> faces) {
         1.0f, -1.0f,  1.0f
     };
 
-    std::vector<GLuint> skybox_indices = {
-        // Labels for vertices that make up each face
-        // Right
-        1, 2, 6,
-        6, 5, 1,
-        // Left
-        0, 4, 7,
-        7, 3, 0,
-        // Top
-        4, 5, 6,
-        6, 7, 4,
-        // Bottom
-        0, 3, 2,
-        2, 1, 0,
-        // Back
-        0, 1, 5,
-        5, 4, 0,
-        // Front
-        3, 7, 6,
-        6, 2, 3
-    };
-
     // Create the necessary VAOs, VBOs, and EBOs for the skybox
     // Note that the VAO is a member of the Skybox class, so it has already been generated in the constructor
     // In that case, we generate the VBOs and EBOs
     glGenBuffers(1, &cubemap_VBO);
-    Debug::glErrorCheck();
-    glGenBuffers(1, &cubemap_EBO);
     Debug::glErrorCheck();
 
     // Fill these buffers with relevant data
@@ -97,18 +72,15 @@ void Skybox::load_texture(std::vector<std::string> faces) {
     Debug::glErrorCheck();
     glBufferData(GL_ARRAY_BUFFER, skybox_vertices.size() * sizeof(GLfloat), skybox_vertices.data(), GL_STATIC_DRAW);
     Debug::glErrorCheck();
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubemap_EBO);
-    Debug::glErrorCheck();
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, skybox_indices.size() * sizeof(GLuint), skybox_indices.data(), GL_STATIC_DRAW);
 
     // Now bind the VAO
     glGenVertexArrays(1, &cubemap_VAO);
     Debug::glErrorCheck();
     glBindVertexArray(cubemap_VAO);
     Debug::glErrorCheck();
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
-    Debug::glErrorCheck();
     glEnableVertexAttribArray(0);
+    Debug::glErrorCheck();
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
     Debug::glErrorCheck();
 
     // Reset state by unbinding everything
@@ -172,27 +144,27 @@ void Skybox::draw(Shader shader) {
     Debug::glErrorCheck();
 
     // Shader should have a "cubemap" field which contains the cubemap texture. Send the texture to it
-    glActiveTexture(GL_TEXTURE0);
-    Debug::glErrorCheck();
     GLuint location = glGetUniformLocation(shader.ID, "skybox");
     Debug::glErrorCheck();
-    glUniform1i(location, GL_TEXTURE0);
+    glUniform1i(location, 0);
     Debug::glErrorCheck();
 
     // Draw the skybox
     glBindVertexArray(cubemap_VAO);
     Debug::glErrorCheck();
+
+    // Bind texture in appropriate slot
+    glActiveTexture(GL_TEXTURE0);
+    Debug::glErrorCheck();
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture);
     Debug::glErrorCheck();
 
     // Y'know... draw the damn thing
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
     Debug::glErrorCheck();
 
     // Reset state
     glBindVertexArray(0);
-    Debug::glErrorCheck();
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     Debug::glErrorCheck();
 
     // Switch depth function back
@@ -210,11 +182,6 @@ void Skybox::cleanup() {
     // Only clean up the buffers/textures if they've actually been created
     if (cubemap_VBO != 0) {
         glDeleteBuffers(1, &cubemap_VBO);
-        Debug::glErrorCheck();
-    }
-
-    if (cubemap_EBO != 0) {
-        glDeleteBuffers(1, &cubemap_EBO);
         Debug::glErrorCheck();
     }
 

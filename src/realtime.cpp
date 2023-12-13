@@ -171,6 +171,26 @@ void Realtime::initializeGL() {
     m_instancing_shader.loadData(":/resources/shaders/instancing.vert", ":/resources/shaders/model.frag");
     m_skybox_shader.loadData(":/resources/shaders/skybox.vert", ":/resources/shaders/skybox.frag");
 
+    // The skybox shouldn't change when loading a new scene (only where the model is, so we can load it here)
+    // Note the order for the elements of the Skybox must be in:
+    // RIGHT, LEFT, TOP, BOTTOM, FRONT, BACK
+    // According to this pattern: https://learnopengl.com/img/advanced/cubemaps_skybox.png
+    std::string working_dir = QDir::currentPath().toStdString();
+    std::string path_to_skybox_dir = "/resources/skybox/";
+
+    // Using 6 of the same images for now (testing)
+    std::vector<std::string> skybox_images = {
+        working_dir + path_to_skybox_dir + "red_space_test.png",
+        working_dir + path_to_skybox_dir + "red_space_test.png",
+        working_dir + path_to_skybox_dir + "red_space_test.png",
+        working_dir + path_to_skybox_dir + "red_space_test.png",
+        working_dir + path_to_skybox_dir + "red_space_test.png",
+        working_dir + path_to_skybox_dir + "red_space_test.png"
+    };
+
+    // When the program starts, the skybox should be loaded
+    box.load_texture(skybox_images);
+
     // Now that we've initialized GL, we can actually process settings changes
     gl_initialized = true;
     updateMeshes();
@@ -312,6 +332,9 @@ void Realtime::paintGL() {
     // The really neat stuff we actually care about!!!
     paint_model_geometry();
 
+    // The moment of truth. Paint the skybox...
+    paint_skybox();
+
     // Render scene to the default framebuffer (the one that we actually display our stuff on)
     glBindFramebuffer(GL_FRAMEBUFFER, default_fbo);
     Debug::glErrorCheck();
@@ -334,15 +357,20 @@ void Realtime::paint_skybox() {
 
     // Send necessary uniforms for camera
     GLuint location;
-    location = glGetUniformLocation(m_model_shader.ID, "view_matrix");
+    location = glGetUniformLocation(m_skybox_shader.ID, "view_matrix");
     Debug::glErrorCheck();
-    glUniformMatrix4fv(location, 1, GL_FALSE, &(view_no_translate[0][0]));
+    glUniformMatrix4fv(location, 1, GL_FALSE, &view_no_translate[0][0]);
     Debug::glErrorCheck();
 
-    location = glGetUniformLocation(m_model_shader.ID, "proj_matrix");
+    location = glGetUniformLocation(m_skybox_shader.ID, "proj_matrix");
     Debug::glErrorCheck();
     glUniformMatrix4fv(location, 1, GL_FALSE, &((m_camera.get_projection_matrix()))[0][0]);
     Debug::glErrorCheck();
+
+    // DRAW THE BOX
+    box.draw(m_skybox_shader);
+
+    m_skybox_shader.Deactivate();
 }
 
 // New func to test painting model shaders
