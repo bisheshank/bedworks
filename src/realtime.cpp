@@ -67,6 +67,7 @@ Realtime::Realtime(QWidget *parent)
 
     m_phong_shader = Shader();
     m_framebuffer_shader = Shader();
+    m_model_shader = Shader();
 }
 
 void Realtime::finish() {
@@ -142,6 +143,7 @@ void Realtime::initializeGL() {
     m_phong_shader.loadData(":/resources/shaders/phong.vert", ":/resources/shaders/phong.frag");
     // And the other shader
     m_framebuffer_shader.loadData(":/resources/shaders/framebuffer.vert", ":/resources/shaders/framebuffer.frag");
+    m_model_shader.loadData(":/resources/shaders/model.vert", ":/resources/shaders/model.frag");
 
 
     // Now that we've initialized GL, we can actually process settings changes

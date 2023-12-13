@@ -116,6 +116,7 @@ private:
     // Shaders for Phong lighting equation and framebuffer operations
     Shader m_phong_shader;
     Shader m_framebuffer_shader;
+    Shader m_model_shader;
 
     // Global data
     float ka; // Ambient term

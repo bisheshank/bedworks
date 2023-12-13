@@ -69,6 +69,8 @@ add_executable(${PROJECT_NAME}
     src/utils/vbo.h src/utils/vbo.cpp
     src/utils/shader.h src/utils/shader.cpp
     src/glad.c
+
+
 )
 
 # GLM: this creates its library and allows you to `#include "glm/..."`
@@ -98,6 +100,13 @@ qt6_add_resources(${PROJECT_NAME} "Resources"
     resources/shaders/phong.vert
     resources/shaders/framebuffer.vert
     resources/shaders/framebuffer.frag
+    resources/shaders/model.frag
+    resources/shaders/model.vert
+)
+
+target_sources(yesmansky_other_files
+  PRIVATE
+
 )
 
 # GLEW: this provides support for Windows (including 64-bit)
