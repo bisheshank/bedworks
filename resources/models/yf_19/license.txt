@@ -1,0 +1,11 @@
+Model Information:
+* title:	Spaceship macross yf-19
+* source:	https://sketchfab.com/3d-models/spaceship-macross-yf-19-7ac2839c352d49969f4d25a9d0b2fe1c
+* author:	Aurielle Philippart (https://sketchfab.com/phiauri)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Spaceship macross yf-19" (https://sketchfab.com/3d-models/spaceship-macross-yf-19-7ac2839c352d49969f4d25a9d0b2fe1c) by Aurielle Philippart (https://sketchfab.com/phiauri) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

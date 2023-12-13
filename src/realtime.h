@@ -123,6 +123,7 @@ private:
     Shader m_model_shader;
     Shader m_instancing_shader;
     Shader m_skybox_shader;
+    Shader m_spaceship_shader;
 
     // Skybox!
     Skybox box;
@@ -171,4 +172,23 @@ private:
     // TODO: Possibly make this a vector with multiple planets
     Model planet;
     Model asteroids;
+
+    // THE SPACESHIP
+    Model spaceship;
+
+    // Spaceship data for controlling flight
+    float speed = 0.1f;
+
+    // Spaceship data for controlling rotation
+    float pitch_radians = 0.0f;
+    float roll_radians = 0.0f;
+    float yaw_radians = 0.0f;
+
+    // Spaceship data for determining rotation
+    float delta_pitch = 0.0f;
+    float delta_roll = 0.0f;
+    float delta_yaw = 0.0f;
+
+    // Param that controls how much the plane tilts
+    float plane_tilt = 7.5f;
 };
