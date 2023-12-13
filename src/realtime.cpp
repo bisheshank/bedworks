@@ -176,16 +176,16 @@ void Realtime::initializeGL() {
     // RIGHT, LEFT, TOP, BOTTOM, FRONT, BACK
     // According to this pattern: https://learnopengl.com/img/advanced/cubemaps_skybox.png
     std::string working_dir = QDir::currentPath().toStdString();
-    std::string path_to_skybox_dir = "/resources/skybox/";
+    std::string path_to_skybox_dir = "/resources/skybox/lightblue/";
 
     // Using 6 of the same images for now (testing)
     std::vector<std::string> skybox_images = {
-        working_dir + path_to_skybox_dir + "right.jpg",
-        working_dir + path_to_skybox_dir + "left.jpg",
-        working_dir + path_to_skybox_dir + "top.jpg",
-        working_dir + path_to_skybox_dir + "bottom.jpg",
-        working_dir + path_to_skybox_dir + "front.jpg",
-        working_dir + path_to_skybox_dir + "back.jpg"
+        working_dir + path_to_skybox_dir + "right.png",
+        working_dir + path_to_skybox_dir + "left.png",
+        working_dir + path_to_skybox_dir + "top.png",
+        working_dir + path_to_skybox_dir + "bot.png",
+        working_dir + path_to_skybox_dir + "front.png",
+        working_dir + path_to_skybox_dir + "back.png"
     };
 
     // When the program starts, the skybox should be loaded
