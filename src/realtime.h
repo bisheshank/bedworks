@@ -22,7 +22,7 @@
 #include "utils/sceneparser.h"
 #include "utils/shaderloader.h"
 #include "utils/shader.h"
-#include "meshes/model.h"
+#include "meshes/skybox.h"
 
 // Holds light data in a specific way for passing to the shader
 struct Light {
@@ -72,6 +72,7 @@ private:
     void delete_fbo();
     void paint_scene_geometry();
     void paint_model_geometry();
+    void paint_skybox();
     void paint_post_process(GLuint texture);
 
     // Generate a rotation matrix using Rodrigues's rotation formula (very poggers)
@@ -121,6 +122,10 @@ private:
     Shader m_framebuffer_shader;
     Shader m_model_shader;
     Shader m_instancing_shader;
+    Shader m_skybox_shader;
+
+    // Skybox!
+    Skybox box;
 
     // Global data
     float ka; // Ambient term

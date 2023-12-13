@@ -69,6 +69,9 @@ add_executable(${PROJECT_NAME}
     src/utils/vbo.h src/utils/vbo.cpp
     src/utils/shader.h src/utils/shader.cpp
     src/glad.c
+    src/meshes/skybox.h src/meshes/skybox.cpp
+
+
 
 
 
@@ -104,11 +107,12 @@ qt6_add_resources(${PROJECT_NAME} "Resources"
     resources/shaders/model.frag
     resources/shaders/model.vert
     resources/shaders/instancing.vert
+    resources/shaders/skybox.frag
+    resources/shaders/skybox.vert
 )
 
 target_sources(yesmansky_other_files
   PRIVATE
-  resources/shaders/instancing.vert
 
 )
 

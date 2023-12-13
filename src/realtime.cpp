@@ -65,13 +65,19 @@ Realtime::Realtime(QWidget *parent)
     m_fbo_renderbuffer = 0;
     m_fbo = 0;
 
+    // SHADERS!
     m_phong_shader = Shader();
     m_framebuffer_shader = Shader();
     m_model_shader = Shader();
     m_instancing_shader = Shader();
+    m_skybox_shader = Shader();
 
+    // MODELS!
     planet = Model();
     asteroids = Model();
+
+    // SKYBOX!
+    box = Skybox();
 }
 
 void Realtime::finish() {
@@ -104,6 +110,7 @@ void Realtime::finish() {
     m_framebuffer_shader.Delete();
     m_model_shader.Delete();
     m_instancing_shader.Delete();
+    m_skybox_shader.Delete();
 
     this->doneCurrent();
 }
@@ -162,7 +169,27 @@ void Realtime::initializeGL() {
     m_framebuffer_shader.loadData(":/resources/shaders/framebuffer.vert", ":/resources/shaders/framebuffer.frag");
     m_model_shader.loadData(":/resources/shaders/model.vert", ":/resources/shaders/model.frag");
     m_instancing_shader.loadData(":/resources/shaders/instancing.vert", ":/resources/shaders/model.frag");
+    m_skybox_shader.loadData(":/resources/shaders/skybox.vert", ":/resources/shaders/skybox.frag");
 
+    // The skybox shouldn't change when loading a new scene (only where the model is, so we can load it here)
+    // Note the order for the elements of the Skybox must be in:
+    // RIGHT, LEFT, TOP, BOTTOM, FRONT, BACK
+    // According to this pattern: https://learnopengl.com/img/advanced/cubemaps_skybox.png
+    std::string working_dir = QDir::currentPath().toStdString();
+    std::string path_to_skybox_dir = "/resources/skybox/lightblue/";
+
+    // Using 6 of the same images for now (testing)
+    std::vector<std::string> skybox_images = {
+        working_dir + path_to_skybox_dir + "right.png",
+        working_dir + path_to_skybox_dir + "left.png",
+        working_dir + path_to_skybox_dir + "top.png",
+        working_dir + path_to_skybox_dir + "bot.png",
+        working_dir + path_to_skybox_dir + "front.png",
+        working_dir + path_to_skybox_dir + "back.png"
+    };
+
+    // When the program starts, the skybox should be loaded
+    box.load_texture(skybox_images);
 
     // Now that we've initialized GL, we can actually process settings changes
     gl_initialized = true;
@@ -305,6 +332,9 @@ void Realtime::paintGL() {
     // The really neat stuff we actually care about!!!
     paint_model_geometry();
 
+    // The moment of truth. Paint the skybox...
+    paint_skybox();
+
     // Render scene to the default framebuffer (the one that we actually display our stuff on)
     glBindFramebuffer(GL_FRAMEBUFFER, default_fbo);
     Debug::glErrorCheck();
@@ -316,6 +346,31 @@ void Realtime::paintGL() {
 
     // Helper to apply post processing
     paint_post_process(m_fbo_texture);
+}
+
+// Function to make the skybox (similar to making the model)
+void Realtime::paint_skybox() {
+    m_skybox_shader.Activate();
+
+    // Compute a version of the view matrix that doesn't use translation (do not want to translate skybox)
+    glm::mat4 view_no_translate = glm::mat4(glm::mat3(m_camera.get_view_matrix()));
+
+    // Send necessary uniforms for camera
+    GLuint location;
+    location = glGetUniformLocation(m_skybox_shader.ID, "view_matrix");
+    Debug::glErrorCheck();
+    glUniformMatrix4fv(location, 1, GL_FALSE, &view_no_translate[0][0]);
+    Debug::glErrorCheck();
+
+    location = glGetUniformLocation(m_skybox_shader.ID, "proj_matrix");
+    Debug::glErrorCheck();
+    glUniformMatrix4fv(location, 1, GL_FALSE, &((m_camera.get_projection_matrix()))[0][0]);
+    Debug::glErrorCheck();
+
+    // DRAW THE BOX
+    box.draw(m_skybox_shader);
+
+    m_skybox_shader.Deactivate();
 }
 
 // New func to test painting model shaders
