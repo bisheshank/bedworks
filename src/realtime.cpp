@@ -180,12 +180,12 @@ void Realtime::initializeGL() {
 
     // Using 6 of the same images for now (testing)
     std::vector<std::string> skybox_images = {
-        working_dir + path_to_skybox_dir + "red_space_test.png",
-        working_dir + path_to_skybox_dir + "red_space_test.png",
-        working_dir + path_to_skybox_dir + "red_space_test.png",
-        working_dir + path_to_skybox_dir + "red_space_test.png",
-        working_dir + path_to_skybox_dir + "red_space_test.png",
-        working_dir + path_to_skybox_dir + "red_space_test.png"
+        working_dir + path_to_skybox_dir + "right.jpg",
+        working_dir + path_to_skybox_dir + "left.jpg",
+        working_dir + path_to_skybox_dir + "top.jpg",
+        working_dir + path_to_skybox_dir + "bottom.jpg",
+        working_dir + path_to_skybox_dir + "front.jpg",
+        working_dir + path_to_skybox_dir + "back.jpg"
     };
 
     // When the program starts, the skybox should be loaded
