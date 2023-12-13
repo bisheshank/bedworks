@@ -65,13 +65,19 @@ Realtime::Realtime(QWidget *parent)
     m_fbo_renderbuffer = 0;
     m_fbo = 0;
 
+    // SHADERS!
     m_phong_shader = Shader();
     m_framebuffer_shader = Shader();
     m_model_shader = Shader();
     m_instancing_shader = Shader();
+    m_skybox_shader = Shader();
 
+    // MODELS!
     planet = Model();
     asteroids = Model();
+
+    // SKYBOX!
+    box = Skybox();
 }
 
 void Realtime::finish() {
@@ -104,6 +110,7 @@ void Realtime::finish() {
     m_framebuffer_shader.Delete();
     m_model_shader.Delete();
     m_instancing_shader.Delete();
+    m_skybox_shader.Delete();
 
     this->doneCurrent();
 }

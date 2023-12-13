@@ -23,6 +23,7 @@
 #include "utils/shaderloader.h"
 #include "utils/shader.h"
 #include "meshes/model.h"
+#include "meshes/skybox.h"
 
 // Holds light data in a specific way for passing to the shader
 struct Light {
@@ -121,6 +122,10 @@ private:
     Shader m_framebuffer_shader;
     Shader m_model_shader;
     Shader m_instancing_shader;
+    Shader m_skybox_shader;
+
+    // Skybox!
+    Skybox box;
 
     // Global data
     float ka; // Ambient term
