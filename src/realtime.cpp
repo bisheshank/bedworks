@@ -136,7 +136,10 @@ void Realtime::initializeGL() {
     // Allows OpenGL to draw objects appropriately on top of one another
     glEnable(GL_DEPTH_TEST);
     // Tells OpenGL to only draw the front face
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
+    //glCullFace(GL_FRONT);
+    glFrontFace(GL_CCW);
+
     // Tells OpenGL how big the screen is
     glViewport(0, 0, size().width() * m_devicePixelRatio, size().height() * m_devicePixelRatio);
 
@@ -154,7 +157,7 @@ void Realtime::initializeGL() {
 
     // Here is where we can load planet data
     std::string working_dir = QDir::currentPath().toStdString();
-    std::string asteroid_path = "/resources/models/planet/scene.gltf";
+    std::string asteroid_path = "/resources/models/asteroid/scene.gltf";
 
     std::cerr << "Trying to load model...\n";
     planet.loadModel((working_dir + asteroid_path).c_str());

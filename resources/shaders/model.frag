@@ -109,5 +109,5 @@ void main()
         FragColor = direcLight();
 
     // PLACEHOLDER:
-    // FragColor = vec4(1.0);
+    //FragColor = vec4(1.0);
 }
