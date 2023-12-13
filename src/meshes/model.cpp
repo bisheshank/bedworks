@@ -29,8 +29,11 @@ Model::Model(const char* file, unsigned int instances, std::vector<glm::mat4> in
 }
 
 void Model::loadModel(const char* file, unsigned int instances, std::vector<glm::mat4> instanceMatrix) {
-    // If the model has already been instantiated, skip
+    // If the model has already been instantiated, clear the existing data
     if (instantiated) {
+        // NOTE: Change this at some point
+        // We can also use this call to change the instances and instance matrices used by this model
+        updateInstances(instances, instanceMatrix);
         return;
     }
 
@@ -50,6 +53,38 @@ void Model::loadModel(const char* file, unsigned int instances, std::vector<glm:
 
     // Mark this model as being instantiated
     instantiated = true;
+}
+
+// Function to update the instance matrices (give a new set of instance matrices)
+void Model::updateInstances(unsigned int new_instances, std::vector<glm::mat4> newInstanceMatrix) {
+    if (!instantiated) {
+        return;
+    }
+
+    // Update the fields of this Model, then update the fields of its associated meshes
+    Model::instances = new_instances;
+    Model::instanceMatrix = newInstanceMatrix;
+
+    // Update every mesh
+    for (int i = 0; i < meshes.size(); i++) {
+        meshes[i].updateInstances(new_instances, newInstanceMatrix);
+    }
+}
+
+// Function to cleanup all associated OpenGL data
+void Model::cleanup() {
+    // Cleanup associated mesh data
+    for (int i = 0; i < meshes.size(); i++) {
+        meshes[i].cleanup();
+    }
+    meshes.clear();
+
+    // Cleanup associated texture data
+    for (int i = 0; i < loadedTex.size(); i++) {
+        loadedTex[i].Delete();
+    }
+    loadedTex.clear();
+    loadedTexName.clear();
 }
 
 // NOTE: Also requires camera and light data to be passed in first
