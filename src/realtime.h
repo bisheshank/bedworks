@@ -120,6 +120,7 @@ private:
     Shader m_phong_shader;
     Shader m_framebuffer_shader;
     Shader m_model_shader;
+    Shader m_instancing_shader;
 
     // Global data
     float ka; // Ambient term

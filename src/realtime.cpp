@@ -68,6 +68,7 @@ Realtime::Realtime(QWidget *parent)
     m_phong_shader = Shader();
     m_framebuffer_shader = Shader();
     m_model_shader = Shader();
+    m_instancing_shader = Shader();
 
     planet = Model();
     asteroids = Model();
@@ -96,6 +97,13 @@ void Realtime::finish() {
 
     // Clean up all associated model data here
     planet.cleanup();
+    asteroids.cleanup();
+
+    // Cleanup all shader stuff here
+    m_phong_shader.Delete();
+    m_framebuffer_shader.Delete();
+    m_model_shader.Delete();
+    m_instancing_shader.Delete();
 
     this->doneCurrent();
 }
@@ -153,6 +161,7 @@ void Realtime::initializeGL() {
     // And the other shader
     m_framebuffer_shader.loadData(":/resources/shaders/framebuffer.vert", ":/resources/shaders/framebuffer.frag");
     m_model_shader.loadData(":/resources/shaders/model.vert", ":/resources/shaders/model.frag");
+    m_instancing_shader.loadData(":/resources/shaders/instancing.vert", ":/resources/shaders/model.frag");
 
 
     // Now that we've initialized GL, we can actually process settings changes
@@ -344,13 +353,45 @@ void Realtime::paint_model_geometry() {
     glUniform3f(location, 0.0f, 0.0f, 0.0f);
     Debug::glErrorCheck();
 
-    // Draw our two models
-    // TODO: Add more models
+    // Draw planet using model shader (since it is not instanced
     planet.Draw(m_model_shader);
-    asteroids.Draw(m_model_shader);
-
-
     m_model_shader.Deactivate();
+
+    // Asteroids need to be configured to use separate model shader
+
+    m_instancing_shader.Activate();
+
+    // Send necessary uniforms for the instancing shader
+    location = glGetUniformLocation(m_instancing_shader.ID, "view_matrix");
+    Debug::glErrorCheck();
+    glUniformMatrix4fv(location, 1, GL_FALSE, &((m_camera.get_view_matrix())[0][0]));
+    Debug::glErrorCheck();
+
+    location = glGetUniformLocation(m_instancing_shader.ID, "proj_matrix");
+    Debug::glErrorCheck();
+    glUniformMatrix4fv(location, 1, GL_FALSE, &((m_camera.get_projection_matrix()))[0][0]);
+    Debug::glErrorCheck();
+
+    // Uniform for light needs to be sent via this func, other samplers are sent via model
+    // Camera position
+    // TODO: Change to actually load in light data like the original Phong Shader
+    location = glGetUniformLocation(m_instancing_shader.ID, "camera_pos");
+    Debug::glErrorCheck();
+    glUniform3f(location, m_camera.get_camera_pos()[0], m_camera.get_camera_pos()[1], m_camera.get_camera_pos()[2]);
+    Debug::glErrorCheck();
+
+    location = glGetUniformLocation(m_instancing_shader.ID, "light_color");
+    Debug::glErrorCheck();
+    glUniform4f(location, 1.0f, 1.0f, 1.0f, 1.0f);
+    Debug::glErrorCheck();
+    location = glGetUniformLocation(m_instancing_shader.ID, "light_pos");
+    Debug::glErrorCheck();
+    glUniform3f(location, 0.0f, 0.0f, 0.0f);
+    Debug::glErrorCheck();
+
+    asteroids.Draw(m_instancing_shader);
+
+    m_instancing_shader.Deactivate();
 }
 
 // Helper function to apply post processing effects to rendered image
@@ -558,11 +599,21 @@ void Realtime::generate_scene() {
     makeCurrent();
     // Let's just focus on generating a new planet
     std::string working_dir = QDir::currentPath().toStdString();
-    std::string planet_path = "/resources/models/asteroid/scene.gltf";
+    std::string planet_path = "/resources/models/planet/scene.gltf";
 
-    std::cerr << "Trying to load model...\n";
+    std::cerr << "Trying to load planet model...\n";
     planet.loadModel((working_dir + planet_path).c_str());
     std::cerr << "Planet model loaded using path: " << working_dir << planet_path << "\n";
+
+    // Also add asteroids
+    // FIX some instancing number
+    unsigned int instances = 2500;
+    std::vector<glm::mat4> asteroid_matrices = generateAsteroidTransformations(instances);
+    std::string asteroid_path = "/resources/models/asteroid/scene.gltf";
+
+    std::cerr << "Trying to load " << instances << " instances of asteroids model...\n";
+    asteroids.loadModel((working_dir + asteroid_path).c_str(), instances, asteroid_matrices);
+    std::cerr << "Asteroid model loaded using path: " << working_dir << asteroid_path << "\n";
 }
 
 // Load a new scene file's data into the scene
