@@ -1,7 +1,17 @@
 #include"shader.h"
 
-// Constructor that build the Shader Program from 2 different shaders
-Shader::Shader(const char* vertexFile, const char* fragmentFile)
+// Default constructor
+Shader::Shader() {
+    ID = 0;
+}
+
+// Constructor that also loads shader data
+Shader::Shader(const char* vertexFile, const char* fragmentFile) {
+    ID = ShaderLoader::createShaderProgram(vertexFile, fragmentFile);
+}
+
+// Load data for shader
+void Shader::loadData(const char* vertexFile, const char* fragmentFile)
 {
     // Uses the shaderloader code given to us to make the shader
     ID = ShaderLoader::createShaderProgram(vertexFile, fragmentFile);

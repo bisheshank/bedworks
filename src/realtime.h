@@ -20,6 +20,8 @@
 #include "primitives/cone.h"
 #include "utils/sceneparser.h"
 #include "utils/shaderloader.h"
+#include "utils/shader.h"
+#include "meshes/model.h"
 
 // Holds light data in a specific way for passing to the shader
 struct Light {
@@ -63,7 +65,7 @@ private:
     void timerEvent(QTimerEvent *event) override;
     void updateMeshes();
     void deleteMeshes();
-    void send_light_to_shader(GLuint shader, int index);
+    void send_light_to_shader(Shader shader, int index);
     void make_fbo();
     void delete_fbo();
     void paint_scene_geometry();
@@ -112,8 +114,8 @@ private:
     std::vector<Cone> cones;
 
     // Shaders for Phong lighting equation and framebuffer operations
-    GLuint m_phong_shader;
-    GLuint m_framebuffer_shader;
+    Shader m_phong_shader;
+    Shader m_framebuffer_shader;
 
     // Global data
     float ka; // Ambient term

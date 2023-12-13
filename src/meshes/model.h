@@ -1,7 +1,5 @@
 #pragma once
 
-// DON'T TOUCH THIS DEFINE, PLEASE
-#define STB_IMAGE_IMPLEMENTATION
 #include"utils/debug.h"
 #include"libraries/include/json/json.h"
 #include"Mesh.h"
