@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 
 #include <unordered_map>
+#include <QFileDialog>
 #include <QElapsedTimer>
 #include <QOpenGLWidget>
 #include <QTime>
@@ -20,6 +21,8 @@
 #include "primitives/cone.h"
 #include "utils/sceneparser.h"
 #include "utils/shaderloader.h"
+#include "utils/shader.h"
+#include "meshes/model.h"
 
 // Holds light data in a specific way for passing to the shader
 struct Light {
@@ -63,10 +66,11 @@ private:
     void timerEvent(QTimerEvent *event) override;
     void updateMeshes();
     void deleteMeshes();
-    void send_light_to_shader(GLuint shader, int index);
+    void send_light_to_shader(Shader shader, int index);
     void make_fbo();
     void delete_fbo();
     void paint_scene_geometry();
+    void paint_model_geometry();
     void paint_post_process(GLuint texture);
 
     // Generate a rotation matrix using Rodrigues's rotation formula (very poggers)
@@ -112,8 +116,9 @@ private:
     std::vector<Cone> cones;
 
     // Shaders for Phong lighting equation and framebuffer operations
-    GLuint m_phong_shader;
-    GLuint m_framebuffer_shader;
+    Shader m_phong_shader;
+    Shader m_framebuffer_shader;
+    Shader m_model_shader;
 
     // Global data
     float ka; // Ambient term
@@ -147,11 +152,14 @@ private:
     int m_fbo_width;
 
     // Controls how much we convolve by (blur filter)
-    int filter_radius = 2;
+    int filter_radius = 5;
 
     // Default FBO counter (the one that actually displays stuff lol)
     GLuint default_fbo = 2;
 
     // For asteroid generation
     std::vector<glm::mat4> generateAsteroidTransformations(const unsigned int number = 2000);
+
+    // For holding different models to instantiate
+    Model planet;
 };

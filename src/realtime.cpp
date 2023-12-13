@@ -1,3 +1,5 @@
+// DON'T TOUCH THIS DEFINE, PLEASE
+#define STB_IMAGE_IMPLEMENTATION
 #include "realtime.h"
 
 #include <QCoreApplication>
@@ -62,6 +64,12 @@ Realtime::Realtime(QWidget *parent)
     m_fbo_texture = 0;
     m_fbo_renderbuffer = 0;
     m_fbo = 0;
+
+    m_phong_shader = Shader();
+    m_framebuffer_shader = Shader();
+    m_model_shader = Shader();
+
+    planet = Model();
 }
 
 void Realtime::finish() {
@@ -134,16 +142,23 @@ void Realtime::initializeGL() {
 
     // Students: anything requiring OpenGL calls when the program starts should be done here
     // Like loading the shader
-    m_phong_shader = ShaderLoader::createShaderProgram(":/resources/shaders/phong.vert", ":/resources/shaders/phong.frag");
+    m_phong_shader.loadData(":/resources/shaders/phong.vert", ":/resources/shaders/phong.frag");
     // And the other shader
-    m_framebuffer_shader = ShaderLoader::createShaderProgram(":/resources/shaders/framebuffer.vert", ":/resources/shaders/framebuffer.frag");
+    m_framebuffer_shader.loadData(":/resources/shaders/framebuffer.vert", ":/resources/shaders/framebuffer.frag");
+    m_model_shader.loadData(":/resources/shaders/model.vert", ":/resources/shaders/model.frag");
 
 
     // Now that we've initialized GL, we can actually process settings changes
     gl_initialized = true;
     updateMeshes();
 
-    generateAsteroidTransformations();
+    // Here is where we can load planet data
+    std::string working_dir = QDir::currentPath().toStdString();
+    std::string asteroid_path = "/resources/models/planet/scene.gltf";
+
+    std::cerr << "Trying to load model...\n";
+    planet.loadModel((working_dir + asteroid_path).c_str());
+    std::cerr << "Planet model loaded using path: " << working_dir << asteroid_path << "\n";
 
     // Create data that encodes the two triangles that make up a framebuffer
     // Allows for mapping over our rendered image as if it is a texture
@@ -279,6 +294,8 @@ void Realtime::paintGL() {
     // Now paint the scene geometry
     paint_scene_geometry();
 
+    paint_model_geometry();
+
     // Render scene to the default framebuffer (the one that we actually display our stuff on)
     glBindFramebuffer(GL_FRAMEBUFFER, default_fbo);
     Debug::glErrorCheck();
@@ -292,11 +309,49 @@ void Realtime::paintGL() {
     paint_post_process(m_fbo_texture);
 }
 
+// New func to test painting model shaders
+void Realtime::paint_model_geometry() {
+    m_model_shader.Activate();
+
+    // Send necessary uniforms for camera
+    GLuint location;
+    location = glGetUniformLocation(m_model_shader.ID, "view_matrix");
+    Debug::glErrorCheck();
+    glUniformMatrix4fv(location, 1, GL_FALSE, &((m_camera.get_view_matrix())[0][0]));
+    Debug::glErrorCheck();
+
+    location = glGetUniformLocation(m_model_shader.ID, "proj_matrix");
+    Debug::glErrorCheck();
+    glUniformMatrix4fv(location, 1, GL_FALSE, &((m_camera.get_projection_matrix()))[0][0]);
+    Debug::glErrorCheck();
+
+    // Remaining uniforms for vertex shader sent via model
+
+    // Uniform for light needs to be sent via this func, other samplers are sent via model
+    // Camera position
+    location = glGetUniformLocation(m_model_shader.ID, "camera_pos");
+    Debug::glErrorCheck();
+    glUniform3f(location, m_camera.get_camera_pos()[0], m_camera.get_camera_pos()[1], m_camera.get_camera_pos()[2]);
+    Debug::glErrorCheck();
+
+    location = glGetUniformLocation(m_model_shader.ID, "light_color");
+    Debug::glErrorCheck();
+    glUniform4f(location, 1.0f, 1.0f, 1.0f, 1.0f);
+    Debug::glErrorCheck();
+    location = glGetUniformLocation(m_model_shader.ID, "light_pos");
+    Debug::glErrorCheck();
+    glUniform3f(location, 0.0f, 0.0f, 0.0f);
+    Debug::glErrorCheck();
+
+    planet.Draw(m_model_shader);
+
+    m_model_shader.Deactivate();
+}
+
 // Helper function to apply post processing effects to rendered image
 void Realtime::paint_post_process(GLuint texture) {
     // Using the framebuffer shader for postprocessing
-    glUseProgram(m_framebuffer_shader);
-    Debug::glErrorCheck();
+    m_framebuffer_shader.Activate();
 
     // Bind the necessary OpenGL components
     // Fullscreen VAO (the thing that defines the UV coordinates)
@@ -313,38 +368,38 @@ void Realtime::paint_post_process(GLuint texture) {
     GLuint location;
 
     // Send texture so we can sample from it
-    location = glGetUniformLocation(m_framebuffer_shader, "sampler2D");
+    location = glGetUniformLocation(m_framebuffer_shader.ID, "sampler2D");
     Debug::glErrorCheck();
     glUniform1i(location, GL_TEXTURE0);
     Debug::glErrorCheck();
 
     // Send booleans indicating if we should use certain post-processing techniques
     // Per-pixel
-    location = glGetUniformLocation(m_framebuffer_shader, "per_pixel");
+    location = glGetUniformLocation(m_framebuffer_shader.ID, "per_pixel");
     Debug::glErrorCheck();
     glUniform1i(location, settings.perPixelFilter);
     Debug::glErrorCheck();
 
     // Kernel-based
-    location = glGetUniformLocation(m_framebuffer_shader, "per_kernel");
+    location = glGetUniformLocation(m_framebuffer_shader.ID, "per_kernel");
     Debug::glErrorCheck();
     glUniform1i(location, settings.kernelBasedFilter);
     Debug::glErrorCheck();
 
     // Send the width of the screen for convolution
-    location = glGetUniformLocation(m_framebuffer_shader, "u_step");
+    location = glGetUniformLocation(m_framebuffer_shader.ID, "u_step");
     Debug::glErrorCheck();
     glUniform1f(location, 1.0f / (m_fbo_width * m_devicePixelRatio));
     Debug::glErrorCheck();
 
     // Send the height of the screen for convolution
-    location = glGetUniformLocation(m_framebuffer_shader, "v_step");
+    location = glGetUniformLocation(m_framebuffer_shader.ID, "v_step");
     Debug::glErrorCheck();
     glUniform1f(location, 1.0f / (m_fbo_height * m_devicePixelRatio));
     Debug::glErrorCheck();
 
     // Send radius of convolution
-    location = glGetUniformLocation(m_framebuffer_shader, "radius");
+    location = glGetUniformLocation(m_framebuffer_shader.ID, "radius");
     Debug::glErrorCheck();
     glUniform1i(location, filter_radius);
     Debug::glErrorCheck();
@@ -365,17 +420,17 @@ void Realtime::paint_post_process(GLuint texture) {
 // Helper function that paints the scene geometry to whatever framebuffer we want to paint to (default or our own)
 void Realtime::paint_scene_geometry() {
     // Normally one would iterate over shaders, but since we only have 1 shader that's not necessary
-    glUseProgram(m_phong_shader);
+    m_phong_shader.Activate();
     Debug::glErrorCheck();
 
     // Pass in relevant uniforms defined in the Realtime instance (Camera, lights)
     GLuint location;
-    location = glGetUniformLocation(m_phong_shader, "view_matrix");
+    location = glGetUniformLocation(m_phong_shader.ID, "view_matrix");
     Debug::glErrorCheck();
     glUniformMatrix4fv(location, 1, GL_FALSE, &((m_camera.get_view_matrix())[0][0]));
     Debug::glErrorCheck();
 
-    location = glGetUniformLocation(m_phong_shader, "proj_matrix");
+    location = glGetUniformLocation(m_phong_shader.ID, "proj_matrix");
     Debug::glErrorCheck();
     glUniformMatrix4fv(location, 1, GL_FALSE, &((m_camera.get_projection_matrix()))[0][0]);
     Debug::glErrorCheck();
@@ -387,23 +442,23 @@ void Realtime::paint_scene_geometry() {
     }
 
     // Pass in the global data uniforms
-    location = glGetUniformLocation(m_phong_shader, "ka");
+    location = glGetUniformLocation(m_phong_shader.ID, "ka");
     Debug::glErrorCheck();
     glUniform1f(location, ka);
     Debug::glErrorCheck();
 
-    location = glGetUniformLocation(m_phong_shader, "kd");
+    location = glGetUniformLocation(m_phong_shader.ID, "kd");
     Debug::glErrorCheck();
     glUniform1f(location, kd);
     Debug::glErrorCheck();
 
-    location = glGetUniformLocation(m_phong_shader, "ks");
+    location = glGetUniformLocation(m_phong_shader.ID, "ks");
     Debug::glErrorCheck();
     glUniform1f(location, ks);
     Debug::glErrorCheck();
 
     // Camera position
-    location = glGetUniformLocation(m_phong_shader, "camera_pos");
+    location = glGetUniformLocation(m_phong_shader.ID, "camera_pos");
     Debug::glErrorCheck();
     glUniform3f(location, m_camera.get_camera_pos()[0], m_camera.get_camera_pos()[1], m_camera.get_camera_pos()[2]);
     Debug::glErrorCheck();
@@ -416,7 +471,7 @@ void Realtime::paint_scene_geometry() {
 
         // Then draw them
         for(int i = 0; i < spheres.size(); i++) {
-            spheres[i].draw(m_phong_shader);
+            spheres[i].draw(m_phong_shader.ID);
         }
 
         // Then unbind the spheres
@@ -432,7 +487,7 @@ void Realtime::paint_scene_geometry() {
 
         // Then draw them
         for(int i = 0; i < cubes.size(); i++) {
-            cubes[i].draw(m_phong_shader);
+            cubes[i].draw(m_phong_shader.ID);
         }
 
         // Then unbind the cubes
@@ -447,7 +502,7 @@ void Realtime::paint_scene_geometry() {
 
         // Then draw them
         for(int i = 0; i < cylinders.size(); i++) {
-            cylinders[i].draw(m_phong_shader);
+            cylinders[i].draw(m_phong_shader.ID);
         }
 
         // Then unbind the cylinders
@@ -462,7 +517,7 @@ void Realtime::paint_scene_geometry() {
 
         // Then draw them
         for(int i = 0; i < cones.size(); i++) {
-            cones[i].draw(m_phong_shader);
+            cones[i].draw(m_phong_shader.ID);
         }
 
         // Then unbind the cylinders
@@ -577,50 +632,50 @@ void Realtime::sceneChanged() {
 }
 
 // Function to send a single light of data to shader
-void Realtime::send_light_to_shader(GLuint shader, int index) {
+void Realtime::send_light_to_shader(Shader shader, int index) {
     // Prepare some variables to determine where we can put uniforms for this struct
     std::string light_index = "lights[" + std::to_string(index) + "]";
     GLuint location;
 
     // Send each of the fields to the shader
     std::string color_loc = light_index + ".color";
-    location = glGetUniformLocation(m_phong_shader, color_loc.c_str());
+    location = glGetUniformLocation(shader.ID, color_loc.c_str());
     Debug::glErrorCheck();
     glUniform4f(location, lights[index].color[0], lights[index].color[1], lights[index].color[2], lights[index].color[3]);
     Debug::glErrorCheck();
 
     std::string pos_loc = light_index + ".pos";
-    location = glGetUniformLocation(m_phong_shader, pos_loc.c_str());
+    location = glGetUniformLocation(shader.ID, pos_loc.c_str());
     Debug::glErrorCheck();
     glUniform3f(location, lights[index].pos[0], lights[index].pos[1], lights[index].pos[2]);
     Debug::glErrorCheck();
 
     std::string attenuation_func_loc = light_index + ".attenuation_func";
-    location = glGetUniformLocation(m_phong_shader, attenuation_func_loc.c_str());
+    location = glGetUniformLocation(shader.ID, attenuation_func_loc.c_str());
     Debug::glErrorCheck();
     glUniform3f(location, lights[index].attenuation_func[0], lights[index].attenuation_func[1], lights[index].attenuation_func[2]);
     Debug::glErrorCheck();
 
     std::string dir_loc = light_index + ".dir";
-    location = glGetUniformLocation(m_phong_shader, dir_loc.c_str());
+    location = glGetUniformLocation(shader.ID, dir_loc.c_str());
     Debug::glErrorCheck();
     glUniform4f(location, lights[index].dir[0], lights[index].dir[1], lights[index].dir[2], lights[index].dir[3]);
     Debug::glErrorCheck();
 
     std::string penumbra_loc = light_index + ".penumbra";
-    location = glGetUniformLocation(m_phong_shader, penumbra_loc.c_str());
+    location = glGetUniformLocation(shader.ID, penumbra_loc.c_str());
     Debug::glErrorCheck();
     glUniform1f(location, lights[index].penumbra);
     Debug::glErrorCheck();
 
     std::string angle_loc = light_index + ".angle";
-    location = glGetUniformLocation(m_phong_shader, angle_loc.c_str());
+    location = glGetUniformLocation(shader.ID, angle_loc.c_str());
     Debug::glErrorCheck();
     glUniform1f(location, lights[index].angle);
     Debug::glErrorCheck();
 
     std::string type_loc = light_index + ".type";
-    location = glGetUniformLocation(m_phong_shader, type_loc.c_str());
+    location = glGetUniformLocation(shader.ID, type_loc.c_str());
     Debug::glErrorCheck();
     glUniform1i(location, lights[index].type);
     Debug::glErrorCheck();

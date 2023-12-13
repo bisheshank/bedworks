@@ -63,6 +63,8 @@ public:
     glm::vec4 get_left();
     glm::vec4 get_right();
 
+    // TODO: Func to export data (position, view camera matrix) to a shader
+
 private:
     // Vectors that define the camera in world space
     // TODO (Project 6): Modify these

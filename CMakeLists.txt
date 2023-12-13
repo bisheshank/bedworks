@@ -22,6 +22,7 @@ find_package(Qt6 REQUIRED COMPONENTS Xml)
 
 # Allows you to include files from within those directories, without prefixing their filepaths
 include_directories(src)
+include_directories(libraries)
 
 # Specifies .cpp and .h files to be passed to the compiler
 add_executable(${PROJECT_NAME}
@@ -54,16 +55,30 @@ add_executable(${PROJECT_NAME}
     src/primitives/cone.h src/primitives/cone.cpp
 
 
-    src/utils/model.h
+
     src/noise/fastnoise.h src/noise/fastnoise.cpp
+    src/meshes/texture.h src/meshes/texture.cpp
+    src/meshes/model.h src/meshes/model.cpp
+    src/meshes/mesh.h src/meshes/mesh.cpp
+
+    libraries/include/glad/glad.h
+    libraries/include/json/json.h
+    libraries/include/stb/stb_image.h
+    src/utils/ebo.h src/utils/ebo.cpp
+    src/utils/vao.h src/utils/vao.cpp
+    src/utils/vbo.h src/utils/vbo.cpp
+    src/utils/shader.h src/utils/shader.cpp
+    src/glad.c
+
+
 )
 
 # GLM: this creates its library and allows you to `#include "glm/..."`
 add_subdirectory(glm)
 
 # GLEW: this creates its library and allows you to `#include "GL/glew.h"`
-add_library(StaticGLEW STATIC glew/src/glew.c
-)
+add_library(StaticGLEW STATIC
+    glew/src/glew.c)
 include_directories(${PROJECT_NAME} PRIVATE glew/include)
 
 # Specifies libraries to be linked (Qt components, glew, etc)
@@ -85,6 +100,13 @@ qt6_add_resources(${PROJECT_NAME} "Resources"
     resources/shaders/phong.vert
     resources/shaders/framebuffer.vert
     resources/shaders/framebuffer.frag
+    resources/shaders/model.frag
+    resources/shaders/model.vert
+)
+
+target_sources(yesmansky_other_files
+  PRIVATE
+
 )
 
 # GLEW: this provides support for Windows (including 64-bit)
