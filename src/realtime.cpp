@@ -93,6 +93,9 @@ void Realtime::finish() {
         Debug::glErrorCheck();
     }
 
+    // Clean up all associated model data here
+    planet.cleanup();
+
     this->doneCurrent();
 }
 
@@ -1000,6 +1003,7 @@ void printMatrix(const glm::mat4& matrix) {
     std::cout << glm::to_string(matrix) << std::endl;
 }
 
+// I take it this generates NUMBER amount of random model matrices? Nice
 std::vector<glm::mat4> Realtime::generateAsteroidTransformations(const unsigned int number) {
     const float radius = 100.0f;
     const float radiusDeviation = 25.0f;

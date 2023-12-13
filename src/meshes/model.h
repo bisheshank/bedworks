@@ -19,6 +19,9 @@ public:
     // Loads in a model from a file and stores tha information in 'data', 'JSON', and 'file'
     void loadModel(const char* file, unsigned int instances = 1, std::vector<glm::mat4> instanceMatrix = {});
 
+    // Function to update the instance matrices (say, if you want a new random allotment of stuff)
+    void updateInstances(unsigned int new_instances, std::vector<glm::mat4> newInstanceMatrix);
+
     void Draw
         (
             Shader& shader,
@@ -26,6 +29,10 @@ public:
             glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
             glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f)
             );
+
+    // Frees all associated OpenGL memory with this model
+    // TODO: Implement
+    void cleanup();
 
 private:
     // Variables for easy access
