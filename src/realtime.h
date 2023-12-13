@@ -22,7 +22,6 @@
 #include "utils/sceneparser.h"
 #include "utils/shaderloader.h"
 #include "utils/shader.h"
-#include "meshes/model.h"
 #include "meshes/skybox.h"
 
 // Holds light data in a specific way for passing to the shader
@@ -73,6 +72,7 @@ private:
     void delete_fbo();
     void paint_scene_geometry();
     void paint_model_geometry();
+    void paint_skybox();
     void paint_post_process(GLuint texture);
 
     // Generate a rotation matrix using Rodrigues's rotation formula (very poggers)

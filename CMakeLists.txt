@@ -73,6 +73,8 @@ add_executable(${PROJECT_NAME}
 
 
 
+
+
 )
 
 # GLM: this creates its library and allows you to `#include "glm/..."`
@@ -105,11 +107,12 @@ qt6_add_resources(${PROJECT_NAME} "Resources"
     resources/shaders/model.frag
     resources/shaders/model.vert
     resources/shaders/instancing.vert
+    resources/shaders/skybox.frag
+    resources/shaders/skybox.vert
 )
 
 target_sources(yesmansky_other_files
   PRIVATE
-  resources/shaders/instancing.vert
 
 )
 

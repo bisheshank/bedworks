@@ -1,11 +1,9 @@
 #pragma once
 
 #include "utils/debug.h"
-#include "libraries/include/stb/stb_image.h"
 #include "utils/shader.h"
 #include "utils/vao.h"
-#include "utils/vbo.h"
-
+#include "meshes/model.h"
 
 class Skybox
 {
@@ -24,7 +22,7 @@ public:
 
 private:
     // VAOs, VBOs, and texture objects used to render this skybox
-    VAO vao;
+    GLuint cubemap_VAO;
     GLuint cubemap_VBO;
     GLuint cubemap_texture;
     GLuint cubemap_EBO;

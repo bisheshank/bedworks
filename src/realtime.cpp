@@ -169,7 +169,7 @@ void Realtime::initializeGL() {
     m_framebuffer_shader.loadData(":/resources/shaders/framebuffer.vert", ":/resources/shaders/framebuffer.frag");
     m_model_shader.loadData(":/resources/shaders/model.vert", ":/resources/shaders/model.frag");
     m_instancing_shader.loadData(":/resources/shaders/instancing.vert", ":/resources/shaders/model.frag");
-
+    m_skybox_shader.loadData(":/resources/shaders/skybox.vert", ":/resources/shaders/skybox.frag");
 
     // Now that we've initialized GL, we can actually process settings changes
     gl_initialized = true;
@@ -323,6 +323,26 @@ void Realtime::paintGL() {
 
     // Helper to apply post processing
     paint_post_process(m_fbo_texture);
+}
+
+// Function to make the skybox (similar to making the model)
+void Realtime::paint_skybox() {
+    m_skybox_shader.Activate();
+
+    // Compute a version of the view matrix that doesn't use translation (do not want to translate skybox)
+    glm::mat4 view_no_translate = glm::mat4(glm::mat3(m_camera.get_view_matrix()));
+
+    // Send necessary uniforms for camera
+    GLuint location;
+    location = glGetUniformLocation(m_model_shader.ID, "view_matrix");
+    Debug::glErrorCheck();
+    glUniformMatrix4fv(location, 1, GL_FALSE, &(view_no_translate[0][0]));
+    Debug::glErrorCheck();
+
+    location = glGetUniformLocation(m_model_shader.ID, "proj_matrix");
+    Debug::glErrorCheck();
+    glUniformMatrix4fv(location, 1, GL_FALSE, &((m_camera.get_projection_matrix()))[0][0]);
+    Debug::glErrorCheck();
 }
 
 // New func to test painting model shaders

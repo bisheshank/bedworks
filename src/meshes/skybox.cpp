@@ -6,6 +6,7 @@ Skybox::Skybox() {
     cubemap_VBO = 0;
     cubemap_texture = 0;
     cubemap_EBO = 0;
+    cubemap_VAO = 0;
 
     // Skybox hasn't been instantiated yet
     instantiated = false;
@@ -101,7 +102,9 @@ void Skybox::load_texture(std::vector<std::string> faces) {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, skybox_indices.size() * sizeof(GLuint), skybox_indices.data(), GL_STATIC_DRAW);
 
     // Now bind the VAO
-    vao.Bind();
+    glGenVertexArrays(1, &cubemap_VAO);
+    Debug::glErrorCheck();
+    glBindVertexArray(cubemap_VAO);
     Debug::glErrorCheck();
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
     Debug::glErrorCheck();
@@ -113,7 +116,7 @@ void Skybox::load_texture(std::vector<std::string> faces) {
     Debug::glErrorCheck();
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     Debug::glErrorCheck();
-    vao.Unbind();
+    glBindVertexArray(0);
     Debug::glErrorCheck();
 
     // Create the necessary texture infrastructure for cubemap
@@ -154,16 +157,30 @@ void Skybox::load_texture(std::vector<std::string> faces) {
             stbi_image_free(data);
         }
     }
+
+    instantiated = true;
 }
 
 // Draws the skybox (sends any necessary uniforms from skybox to shader)
 void Skybox::draw(Shader shader) {
+    if (!instantiated) {
+        return;
+    }
+
     // Change depth function for rendering skyboxes
     glDepthFunc(GL_LEQUAL);
+    Debug::glErrorCheck();
 
     // Shader should have a "cubemap" field which contains the cubemap texture. Send the texture to it
-    vao.Bind();
     glActiveTexture(GL_TEXTURE0);
+    Debug::glErrorCheck();
+    GLuint location = glGetUniformLocation(shader.ID, "skybox");
+    Debug::glErrorCheck();
+    glUniform1i(location, GL_TEXTURE0);
+    Debug::glErrorCheck();
+
+    // Draw the skybox
+    glBindVertexArray(cubemap_VAO);
     Debug::glErrorCheck();
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture);
     Debug::glErrorCheck();
@@ -171,7 +188,12 @@ void Skybox::draw(Shader shader) {
     // Y'know... draw the damn thing
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
     Debug::glErrorCheck();
-    vao.Unbind();
+
+    // Reset state
+    glBindVertexArray(0);
+    Debug::glErrorCheck();
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+    Debug::glErrorCheck();
 
     // Switch depth function back
     glDepthFunc(GL_LESS);
@@ -180,7 +202,10 @@ void Skybox::draw(Shader shader) {
 
 // Cleanup any OpenGL memory
 void Skybox::cleanup() {
-    vao.Delete();
+    // Clean up VAO
+    if (cubemap_VAO != 0) {
+        glDeleteVertexArrays(1, &cubemap_VAO);
+    }
 
     // Only clean up the buffers/textures if they've actually been created
     if (cubemap_VBO != 0) {
