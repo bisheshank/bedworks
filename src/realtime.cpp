@@ -74,7 +74,9 @@ Realtime::Realtime(QWidget *parent)
     m_spaceship_shader = Shader();
 
     // MODELS!
-    planet = Model();
+    planet1 = Model();
+    planet2 = Model();
+    planet3 = Model();
     asteroids = Model();
     spaceship = Model();
 
@@ -93,6 +95,8 @@ Realtime::Realtime(QWidget *parent)
     delta_pitch = 0.0f;
     delta_roll = 0.0f;
     delta_yaw = 0.0f;
+
+    planets_instantiated = false;
 
     plane_tilt = 0.5f;
 }
@@ -119,7 +123,9 @@ void Realtime::finish() {
     }
 
     // Clean up all associated model data here
-    planet.cleanup();
+    planet1.cleanup();
+    planet2.cleanup();
+    planet3.cleanup();
     asteroids.cleanup();
     spaceship.cleanup();
 
@@ -440,7 +446,11 @@ void Realtime::paint_model_geometry() {
     Debug::glErrorCheck();
 
     // Draw planet using model shader (since it is not instanced
-    planet.Draw(m_model_shader);
+    if (planets_instantiated) {
+        planet1.Draw(m_model_shader, planet_translations[0], glm::quat(1.0f, 0.0f, 0.0f, 0.0f), planet_scales[0]);
+        planet2.Draw(m_model_shader, planet_translations[1], glm::quat(1.0f, 0.0f, 0.0f, 0.0f), planet_scales[1]);
+        planet3.Draw(m_model_shader, planet_translations[2], glm::quat(1.0f, 0.0f, 0.0f, 0.0f), planet_scales[2]);
+    }
 
     m_model_shader.Deactivate();
 
@@ -577,8 +587,8 @@ void Realtime::paint_model_geometry() {
 
     // Incorporate changes
     glm::vec4 yaw_rotation = rotation_to_quaternion(glm::vec3(0.0f, 1.0f, 0.0f), yaw_radians);
-    glm::vec4 pitch_rotation = rotation_to_quaternion(glm::vec3(1.0f, 0.0f, 0.0f), pitch_radians);
-    glm::vec4 roll_rotation = rotation_to_quaternion(glm::vec3(0.0f, 0.0f, 1.0f), roll_radians);
+    glm::vec4 pitch_rotation = rotation_to_quaternion(glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f)), pitch_radians);
+    glm::vec4 roll_rotation = rotation_to_quaternion(glm::normalize(glm::vec3(0.0f, -0.2f, 1.0f)), roll_radians);
 
     // Accumulate changes
     glm::vec4 total_rotation = quaternion_multiply(quaternion_multiply(quaternion_multiply(roll_rotation, yaw_rotation), pitch_rotation), rotation_vec);
@@ -801,17 +811,43 @@ void Realtime::generate_scene() {
     std::string planet_path = "/resources/models/planet/scene.gltf";
 
     std::cerr << "Trying to load planet model...\n";
-    planet.loadModel((working_dir + planet_path).c_str());
+    planet1.loadModel((working_dir + planet_path).c_str());
     std::cerr << "Planet model loaded using path: " << working_dir << planet_path << "\n";
+
+    std::cerr << "Trying to load planet model...\n";
+    planet2.loadModel((working_dir + planet_path).c_str());
+    std::cerr << "Planet model loaded using path: " << working_dir << planet_path << "\n";
+
+    std::cerr << "Trying to load planet model...\n";
+    planet3.loadModel((working_dir + planet_path).c_str());
+    std::cerr << "Planet model loaded using path: " << working_dir << planet_path << "\n";
+
+    planets_instantiated = false;
+
+    planet_translations.clear();
+    planet_scales.clear();
+
+    // Need to create random translations
+    for (int i = 0; i < 3; i++) {
+        glm::vec3 translation = glm::vec3((rand() % 300) - 150, (rand() % 300) - 150, (rand() % 300) - 150);
+        planet_translations.push_back(translation);
+    }
+    // Scales
+    for (int i = 0; i < 3; i++) {
+        glm::vec3 scale = glm::vec3((rand() % 2) + 0.25);
+        planet_scales.push_back(scale);
+    }
+
+    planets_instantiated = true;
 
     // Also add asteroids
     // FIX some instancing number
     unsigned int instances = settings.shapeParameter1;
-    std::vector<glm::mat4> asteroid_matrices = generateAsteroidTransformations(instances);
+    std::vector<glm::mat4> asteroid_matrices = generateAsteroidTransformations(instances, planet_translations);
     std::string asteroid_path = "/resources/models/asteroid/scene.gltf";
 
     std::cerr << "Trying to load " << instances << " instances of asteroids model...\n";
-    asteroids.loadModel((working_dir + asteroid_path).c_str(), instances, asteroid_matrices);
+    asteroids.loadModel((working_dir + asteroid_path).c_str(), 3 * instances, asteroid_matrices);
     std::cerr << "Asteroid model loaded using path: " << working_dir << asteroid_path << "\n";
 }
 
@@ -1317,7 +1353,7 @@ void printMatrix(const glm::mat4& matrix) {
 }
 
 // I take it this generates NUMBER amount of random model matrices? Nice
-std::vector<glm::mat4> Realtime::generateAsteroidTransformations(const unsigned int number) {
+std::vector<glm::mat4> Realtime::generateAsteroidTransformations(const unsigned int number, const std::vector<glm::vec3> coordinates) {
     const float radius = 100.0f;
     const float radiusDeviation = settings.shapeParameter2;
     std::vector<glm::mat4> instanceMatrix;
@@ -1326,44 +1362,45 @@ std::vector<glm::mat4> Realtime::generateAsteroidTransformations(const unsigned 
         return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
     };
 
-    for (unsigned int i = 0; i < number; i++) {
-        // Generate a random seed
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<int> distribution(1, 10000);
-        int randomSeed = distribution(gen);
+    for (const auto& coord : coordinates) {
+        for (unsigned int i = 0; i < number; i++) {
+            // Generate a random seed
+            std::random_device rd;
+            std::mt19937 gen(rd());
+            std::uniform_int_distribution<int> distribution(1, 10000);
+            int randomSeed = distribution(gen);
 
-        // Initialize FastNoise with the random seed
-        FastNoise perlinNoise;
-        perlinNoise.SetSeed(randomSeed);
+            // Initialize FastNoise with the random seed
+            FastNoise perlinNoise;
+            perlinNoise.SetSeed(randomSeed);
 
-        // Generate x and y
-        float x = randf();
-        float y = ((rand() % 2) * 2 - 1) * sqrt(1.0f - x * x);
-        float finalRadius = radius + randf() * radiusDeviation;
+            // Generate x and y
+            float x = randf();
+            float y = ((rand() % 2) * 2 - 1) * sqrt(1.0f - x * x);
+            float finalRadius = radius + randf() * radiusDeviation;
 
-        // Sample Perlin noise as a height map
-        float heightValue = perlinNoise.GetNoise(x * finalRadius, y * finalRadius, 0.0f);
+            // Sample Perlin noise as a height map
+            float heightValue = perlinNoise.GetNoise(x * finalRadius, y * finalRadius, 0.0f);
 
-        // Use height value to displace asteroids vertically
-        float verticalOffset = heightValue * finalRadius / 2; // recheck this
+            // Use height value to displace asteroids vertically
+            float verticalOffset = heightValue * finalRadius / 2; // recheck this
 
-        // Choose translation axis based on a random distribution
-        glm::vec3 translationAxis = (randf() > 0.5f) ?
-                                        glm::vec3(y, 0.0f, x) :
-                                        glm::vec3(x, 0.0f, y);
+            // Choose translation axis based on a random distribution
+            glm::vec3 translationAxis = (randf() > 0.5f) ?
+                                            glm::vec3(y, 0.0f, x) :
+                                            glm::vec3(x, 0.0f, y);
 
-        // Initialize matrices
-        glm::mat4 trans = glm::translate(glm::mat4(1.0f),
-                                         translationAxis * finalRadius +
-                                             glm::vec3(0.0f, verticalOffset, 0.0f));
-        glm::mat4 rot = glm::mat4_cast(glm::quat(randf(), randf(), randf(), randf()));
-        glm::mat4 sca = glm::scale(glm::mat4(1.0f),  randf() * glm::vec3(0.1f));
+            // Initialize matrices
+            glm::mat4 trans = glm::translate(glm::mat4(1.0f),
+                                             translationAxis * finalRadius +
+                                                 glm::vec3(coord.x, verticalOffset + coord.y, coord.z));
+            glm::mat4 rot = glm::mat4_cast(glm::quat(randf(), randf(), randf(), randf()));
+            glm::mat4 sca = glm::scale(glm::mat4(1.0f),  randf() * glm::vec3(0.1f));
 
-        // Push matrix transformation
-        instanceMatrix.push_back(trans * rot * sca);
+            // Push matrix transformation
+            instanceMatrix.push_back(trans * rot * sca);
+        }
     }
-
 //    // Print out the matrices
 //    for (const auto& matrix : instanceMatrix) {
 //        std::cout << glm::to_string(matrix) << std::endl;

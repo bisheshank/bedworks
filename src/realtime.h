@@ -166,15 +166,23 @@ private:
     GLuint default_fbo = 2;
 
     // For asteroid generation
-    std::vector<glm::mat4> generateAsteroidTransformations(const unsigned int number = 2000);
+    std::vector<glm::mat4> generateAsteroidTransformations(const unsigned int number, const std::vector<glm::vec3> coordinates);
 
     // For holding different models to instantiate
     // TODO: Possibly make this a vector with multiple planets
-    Model planet;
+    Model planet1;
+    Model planet2;
+    Model planet3;
     Model asteroids;
+
+    // Transforms for planets
+    std::vector<glm::vec3> planet_translations;
+    std::vector<glm::vec3> planet_scales;
 
     // THE SPACESHIP
     Model spaceship;
+
+    bool planets_instantiated = false;
 
     // Spaceship data for controlling flight
     float speed = 0.1f;
